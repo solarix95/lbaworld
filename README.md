@@ -1,7 +1,7 @@
 
 LBA World
 ===========
-C++/Qt-based Toolchain 
+C++/Qt-based Toolchain for LBA1 (Little Big Adventure, Adeline Software, 1994) 
 
 Features
 ---------
@@ -9,6 +9,7 @@ Features
 2) Utility "lbaspriteviewer": LBA1 2D-Sprite viewer (SPRITES.HQR)
 3) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
 
+![FLAPlayer](https://github.com/solarix95/lbaworld/doc/flaplayer.png)
 
 First steps
 ---------
