@@ -1,0 +1,106 @@
+#include "binaryreader.h"
+
+//-------------------------------------------------------------------------------------------
+BinaryReader::BinaryReader(const QByteArray &buffer)
+ : mCursor(NULL)
+{
+    if (!buffer.isEmpty())
+        setBuffer(buffer);
+}
+
+//-------------------------------------------------------------------------------------------
+void BinaryReader::setBuffer(const QByteArray &buffer)
+{
+    mBuffer = buffer;
+    mCursor = (quint8*)buffer.constData();
+}
+
+//-------------------------------------------------------------------------------------------
+void BinaryReader::clear()
+{
+    mCursor = NULL;
+    mBuffer.clear();
+}
+
+//-------------------------------------------------------------------------------------------
+int BinaryReader::pos() const
+{
+    if (!mCursor)
+        return -1;
+    return mCursor - (quint8*)mBuffer.constData();
+}
+
+//-------------------------------------------------------------------------------------------
+int BinaryReader::size() const
+{
+    return mBuffer.size();
+}
+
+//-------------------------------------------------------------------------------------------
+bool BinaryReader::atEnd() const
+{
+    return !mCursor || (mCursor > tail());
+}
+
+//-------------------------------------------------------------------------------------------
+bool BinaryReader::read(void *destPtr, int size)
+{
+    if ((mCursor + size) > tail())
+        return false;
+    memcpy(destPtr,mCursor,size);
+    mCursor += size;
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+quint8 BinaryReader::readUint8()
+{
+    quint8 ret;
+    bool done = read(&ret,1);
+    Q_ASSERT(done);
+    return ret;
+}
+
+//-------------------------------------------------------------------------------------------
+qint16 BinaryReader::readInt16()
+{
+    qint16 ret;
+    bool done = read(&ret,2);
+    Q_ASSERT(done);
+    return ret;
+}
+
+//-------------------------------------------------------------------------------------------
+bool BinaryReader::skip(int size)
+{
+    if ((mCursor + size) > tail())
+        return false;
+    mCursor += size;
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+bool BinaryReader::seek(int pos)
+{
+    if (pos >= mBuffer.length())
+        return false;
+    mCursor = (quint8*)mBuffer.constData() + pos;
+
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+QByteArray BinaryReader::readBlock(int size)
+{
+    QByteArray block(size,'\0');
+    read(block.data(),size);
+    return block;
+}
+
+//-------------------------------------------------------------------------------------------
+quint8 *BinaryReader::tail() const
+{
+    Q_ASSERT(mCursor);
+    return (quint8*)(mBuffer.constData() + mBuffer.length());
+}
+
