@@ -21,6 +21,7 @@ public:
 
 signals:
     void playSample(int,int);
+    void stopAudio();
 
 private slots:
     void playRess(QString name);

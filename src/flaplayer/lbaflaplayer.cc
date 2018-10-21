@@ -20,6 +20,7 @@ LbaFlaPlayer::LbaFlaPlayer(const LbaRess &ress, QWidget *parent) :
     connect(&mMovie, SIGNAL(playFrame(int)), ui->sldFrame, SLOT(setValue(int)));
     connect(&mMovie, SIGNAL(loaded()), this, SLOT(flaLoaded()));
     connect(&mMovie, SIGNAL(playFlaSample(int,int)), this, SIGNAL(playSample(int,int)));
+    connect(&mMovie, SIGNAL(finished()), this, SIGNAL(stopAudio()));
     connect(ui->spbFps, SIGNAL(valueChanged(int)), &mMovie, SLOT(requestFps(int)));
     ui->wdgMovie->play(&mMovie);
 
@@ -55,6 +56,7 @@ void LbaFlaPlayer::initFromCli()
 //---------------------------------------------------------------------------------------------------------------------
 void LbaFlaPlayer::playRess(QString name)
 {
+    emit stopAudio();
     mMovie.fromBuffer(mLbaRess.fla(name));
 }
 

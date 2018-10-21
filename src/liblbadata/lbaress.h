@@ -16,9 +16,21 @@ public:
 
     void init();
 
+    /*
+       TODO: replace methods with
+
+    int        count(type) const;
+    QByteArray data(type, int index) const;
+
+    */
+
     // Body.HQR
     int        bodyCount() const;
     QByteArray bodyData(int index) const;
+
+    // Invobj.hqr
+    int        invCount() const;
+    QByteArray invData(int index) const;
 
     // ANIM.HQR
     int        animCount() const;
@@ -45,6 +57,7 @@ public:
 
 private:
     QString findLbaData() const;
+    void    processDir(const QString &dirName);
     void    processFiles(const QFileInfoList &files);
 
 
@@ -53,6 +66,9 @@ private:
 
     QString     mLbaBodyFile;        // Body.hqr, Twinsen, Mega Penguin, ....
     HqrFile    *mLbaBodys;
+
+    QString     mLbaInvobjFile;       // Invobj.hqr
+    HqrFile    *mLbaInventoryObjects;
 
     QString     mLbaAnimFile;        // ANIM.HQR, Movement of Twinsen, Mega Penguin, ....
     HqrFile    *mLbaAnims;
@@ -63,7 +79,6 @@ private:
     HqrFile    *mLbaSprites;        // Sprites.hqr
 
     QString     mLbaSamplesFile;    // Samples.hqr, VOC-Sounds
-    QString     mLbaInvobjFile;     // Invobj.hqr
 
     QStringList mLbaTracks;         // Steam Tracks
     QMap<QString,QString> mLbaFlas;  // LBA Cinematics

@@ -9,7 +9,7 @@
 
 //-------------------------------------------------------------------------------------------------
 LbaRess::LbaRess()
- : mLbaRess(NULL), mLbaBodys(NULL), mLbaAnims(NULL), mLba3d(NULL), mLbaFlaSamples(NULL), mLbaSprites(NULL)
+ : mLbaRess(NULL), mLbaBodys(NULL), mLbaInventoryObjects(NULL), mLbaAnims(NULL), mLba3d(NULL), mLbaFlaSamples(NULL), mLbaSprites(NULL)
 {    
 }
 
@@ -25,6 +25,9 @@ LbaRess::~LbaRess()
     if (mLbaBodys)
         delete mLbaBodys;
 
+    if (mLbaInventoryObjects)
+        delete mLbaInventoryObjects;
+
     if (mLbaAnims)
         delete mLbaAnims;
 
@@ -38,14 +41,7 @@ LbaRess::~LbaRess()
 //-------------------------------------------------------------------------------------------------
 void LbaRess::init()
 {
-    QString lbadatadir = findLbaData();
-
-    QDir dir(lbadatadir); // empty "lbadatadir" -> current working dir
-    dir.setFilter(QDir::Files);
-
-    QFileInfoList list = dir.entryInfoList();
-
-    processFiles(list);
+    processDir(findLbaData());
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -64,6 +60,24 @@ QByteArray LbaRess::bodyData(int index) const
         return QByteArray();
 
     return mLbaBodys->block(index);
+}
+
+//-------------------------------------------------------------------------------------------------
+int LbaRess::invCount() const
+{
+    return mLbaInventoryObjects ? mLbaInventoryObjects->count() : 0;
+}
+
+//-------------------------------------------------------------------------------------------------
+QByteArray LbaRess::invData(int index) const
+{
+    if (!mLbaInventoryObjects)
+        return QByteArray();
+
+    if (index < 0 || index >= mLbaInventoryObjects->count())
+        return QByteArray();
+
+    return mLbaInventoryObjects->block(index);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -188,6 +202,25 @@ QString LbaRess::findLbaData() const
 }
 
 //-------------------------------------------------------------------------------------------------
+void LbaRess::processDir(const QString &dirName)
+{
+    QDir dir(dirName); // empty "lbadatadir" -> current working dir
+
+    dir.setFilter(QDir::Files);
+
+    QFileInfoList list = dir.entryInfoList();
+
+    processFiles(list);
+
+    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    list = dir.entryInfoList();
+    foreach(QFileInfo nextDir, list) {
+        processDir(nextDir.absoluteFilePath());
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
 void LbaRess::processFiles(const QFileInfoList &files)
 {
     for (int i=0; i<files.count(); i++) {
@@ -204,6 +237,9 @@ void LbaRess::processFiles(const QFileInfoList &files)
 
         if (next == "body.hqr" && !mLbaBodys)
             mLbaBodys = new HqrFile(files[i].absoluteFilePath());
+
+        if (next == "invobj.hqr" && !mLbaInventoryObjects)
+            mLbaInventoryObjects = new HqrFile(files[i].absoluteFilePath());
 
         if (next == "anim.hqr" && !mLbaAnims)
             mLbaAnims = new HqrFile(files[i].absoluteFilePath());
