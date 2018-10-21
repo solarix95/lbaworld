@@ -10,6 +10,7 @@ Features
 3) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
 
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/flaplayer.png)
+![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/modelviewer.png)
 
 First steps
 ---------
@@ -31,7 +32,7 @@ see also:
 * https://developer.valvesoftware.com/wiki/SteamCMD#Linux
 * https://steamdb.info/search/?a=app&q=lba
 
-3) Dependencies, Download, Build + Run
+3) Dependencies, Download, Build + Run (on Ubuntu)
 ```bash
 $ sudo apt install libsdl-mixer1.2-dev
 $ sudo apt install qt5-default qt5-qmake libqt5opengl5-dev
@@ -39,6 +40,9 @@ $ git clone https://github.com/solarix95/lbaworld.git
 $ cd lbaworld/flaplayer
 $ qmake && make -j8
 $ ./flaplayer --lbabase=<dir-to-lba1-data>
+
+e.g.
+$ ./flaplayer --lbabase=/home/<yourname>/.steam/steamcmd/lba1steam/resources/LBA_FILES
 ```
 
 Milestones

@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <glwidget.h>
 #include <hqrfile.h>
 #include <lbapalette.h>
 #include <lbaress.h>
