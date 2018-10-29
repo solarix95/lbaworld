@@ -41,115 +41,25 @@ LbaRess::~LbaRess()
 //-------------------------------------------------------------------------------------------------
 void LbaRess::init()
 {
-    processDir(findLbaData());
+    processDir(findLbaData("lba1base"), LBA1);
+    processDir(findLbaData("lba2base"), LBA2);
+    processDir(findLbaData("lbawbase"), LBAW);
 }
 
 //-------------------------------------------------------------------------------------------------
-int LbaRess::bodyCount() const
+int LbaRess::count(LbaRess::Source source, LbaRess::Content content) const
 {
-    return mLbaBodys ? mLbaBodys->count() : 0;
+    if (mContent[source][content])
+        return mContent[source][content]->count();
+    return 0;
 }
 
 //-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::bodyData(int index) const
+QByteArray LbaRess::data(LbaRess::Source source, LbaRess::Content content, int index) const
 {
-    if (!mLbaBodys)
+    if (index >= count(source,content))
         return QByteArray();
-
-    if (index < 0 || index >= mLbaBodys->count())
-        return QByteArray();
-
-    return mLbaBodys->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-int LbaRess::invCount() const
-{
-    return mLbaInventoryObjects ? mLbaInventoryObjects->count() : 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::invData(int index) const
-{
-    if (!mLbaInventoryObjects)
-        return QByteArray();
-
-    if (index < 0 || index >= mLbaInventoryObjects->count())
-        return QByteArray();
-
-    return mLbaInventoryObjects->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-int LbaRess::animCount() const
-{
-    return mLbaAnims ? mLbaAnims->count() : 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::animData(int index) const
-{
-    if (!mLbaAnims)
-        return QByteArray();
-
-    if (index < 0 || index >= mLbaAnims->count())
-        return QByteArray();
-
-    return mLbaAnims->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-int LbaRess::dddCount() const
-{
-    return mLba3d ? mLba3d->count() : 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::dddData(int index) const
-{
-    if (!mLba3d)
-        return QByteArray();
-
-    if (index < 0 || index >= mLba3d->count())
-        return QByteArray();
-
-    return mLba3d->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-int LbaRess::ressCount() const
-{
-    return mLbaRess ? mLbaRess->count() : 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::ressData(int index) const
-{
-    if (!mLbaRess)
-        return QByteArray();
-
-    if (index < 0 || index >= mLbaRess->count())
-        return QByteArray();
-
-    return mLbaRess->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-int LbaRess::spritesCount() const
-{
-    return mLbaSprites ? mLbaSprites->count() : 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::spriteData(int index) const
-{
-    if (!mLbaSprites)
-        return QByteArray();
-
-    if (index < 0 || index >= mLbaSprites->count())
-        return QByteArray();
-
-    return mLbaSprites->block(index);
+    return mContent[source][content]->block(index);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -169,23 +79,13 @@ QByteArray LbaRess::fla(const QString &name) const
 }
 
 //-------------------------------------------------------------------------------------------------
-QByteArray LbaRess::flaSample(int index) const
-{
-    Q_ASSERT(index >= 0);
-    if (!mLbaFlaSamples || index >= mLbaFlaSamples->count())
-        return QByteArray();
-
-    return mLbaFlaSamples->block(index);
-}
-
-//-------------------------------------------------------------------------------------------------
-QString LbaRess::findLbaData() const
+QString LbaRess::findLbaData(const QString &sourcename) const
 {
     QString dir;
 
     // First priority: program args
     foreach(QString nextArg, qApp->arguments()) {
-        if (nextArg.startsWith("--lbabase=")) {
+        if (nextArg.startsWith(QString("--%1=").arg(sourcename.toLower()))) {
             dir = nextArg.split("=")[1];
             if (QFile::exists(dir))
                 return dir;
@@ -194,7 +94,7 @@ QString LbaRess::findLbaData() const
 
     // 2nd prio: ENV
     QProcessEnvironment env;
-    dir = env.value("LBABASE","lbabase"); // 3rd prio: relative folder "lbabase"
+    dir = env.value(sourcename.toUpper(),sourcename.toLower()); // 3rd prio: relative folder e.g. "lbabase"
     if (QFile::exists(dir))
         return dir;
 
@@ -202,26 +102,29 @@ QString LbaRess::findLbaData() const
 }
 
 //-------------------------------------------------------------------------------------------------
-void LbaRess::processDir(const QString &dirName)
+void LbaRess::processDir(const QString &dirName, Source source)
 {
-    QDir dir(dirName); // empty "lbadatadir" -> current working dir
+    if (dirName.isEmpty())
+        return;
+
+    QDir dir(dirName);
 
     dir.setFilter(QDir::Files);
 
     QFileInfoList list = dir.entryInfoList();
 
-    processFiles(list);
+    processFiles(list, source);
 
     dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
 
     list = dir.entryInfoList();
     foreach(QFileInfo nextDir, list) {
-        processDir(nextDir.absoluteFilePath());
+        processDir(nextDir.absoluteFilePath(), source);
     }
 }
 
 //-------------------------------------------------------------------------------------------------
-void LbaRess::processFiles(const QFileInfoList &files)
+void LbaRess::processFiles(const QFileInfoList &files, Source source)
 {
     for (int i=0; i<files.count(); i++) {
         QString next = files[i].fileName().toLower();
@@ -229,26 +132,29 @@ void LbaRess::processFiles(const QFileInfoList &files)
             if (!mLbaFlas.contains(next))
                 mLbaFlas[next] = files[i].absoluteFilePath();
 
-        if (next == "flasamp.hqr")
-            mLbaFlaSamples = new HqrFile(files[i].absoluteFilePath());
+        if (next == "flasamp.hqr" && !mContent[source][FlaSmpl])
+            mContent[source][FlaSmpl] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "ress.hqr" && !mLbaRess)
-            mLbaRess = new HqrFile(files[i].absoluteFilePath());
+        if (next == "ress.hqr" && !mContent[source][Ress])
+            mContent[source][Ress] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "body.hqr" && !mLbaBodys)
-            mLbaBodys = new HqrFile(files[i].absoluteFilePath());
+        if (next == "body.hqr" && !mContent[source][Body])
+            mContent[source][Body] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "invobj.hqr" && !mLbaInventoryObjects)
-            mLbaInventoryObjects = new HqrFile(files[i].absoluteFilePath());
+        if (next == "invobj.hqr" && !mContent[source][StaticObjs])                        // LBA1 only
+            mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "anim.hqr" && !mLbaAnims)
-            mLbaAnims = new HqrFile(files[i].absoluteFilePath());
+        if (next == "objfix.hqr" && !mContent[source][StaticObjs])                        // LBA2 only
+            mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "sprites.hqr" && !mLbaSprites)
-            mLbaSprites = new HqrFile(files[i].absoluteFilePath());
+        if (next == "anim.hqr" && !mContent[source][Anim])
+            mContent[source][Anim] = new HqrFile(files[i].absoluteFilePath());
 
-        if (next == "file3d.hqr" && !mLba3d)
-            mLba3d = new HqrFile(files[i].absoluteFilePath());
+        if (next == "sprites.hqr" && !mContent[source][Sprites])
+            mContent[source][Sprites] = new HqrFile(files[i].absoluteFilePath());
+
+        if (next == "file3d.hqr" && !mContent[source][File3d])
+            mContent[source][File3d] = new HqrFile(files[i].absoluteFilePath());
     }
 }
 

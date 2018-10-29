@@ -26,11 +26,11 @@ LbaSpritePlayer::~LbaSpritePlayer()
 void LbaSpritePlayer::showSprite()
 {
     int index = ui->spbIndex->value();
-    if (index < 0 || index >= mLbaRess.spritesCount())
+    if (index < 0 || index >= mLbaRess.count(LbaRess::LBA1,LbaRess::Sprites))
         return;
-    LbaPalette pal(mLbaRess.ressData(0));
+    LbaPalette pal(mLbaRess.data(LbaRess::LBA1,LbaRess::Ress,0));
 
-    LbaSprite sprite(pal,mLbaRess.spriteData(index));
+    LbaSprite sprite(pal,mLbaRess.data(LbaRess::LBA1,LbaRess::Sprites,index));
 
     QImage img = sprite.image();
 

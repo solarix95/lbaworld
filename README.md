@@ -39,10 +39,10 @@ $ sudo apt install qt5-default qt5-qmake libqt5opengl5-dev
 $ git clone https://github.com/solarix95/lbaworld.git
 $ cd lbaworld/flaplayer
 $ qmake && make -j8
-$ ./flaplayer --lbabase=<dir-to-lba1-data>
+$ ./flaplayer --lba1base=<dir-to-lba1-data>
 
 e.g.
-$ ./flaplayer --lbabase=/home/<yourname>/.steam/steamcmd/lba1steam/resources/LBA_FILES
+$ ./flaplayer --lba1base=/home/<yourname>/.steam/steamcmd/lba1steam/resources/LBA_FILES
 ```
 
 Milestones

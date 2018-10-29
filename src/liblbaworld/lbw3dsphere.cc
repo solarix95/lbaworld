@@ -7,7 +7,7 @@
 #endif
 
 //-------------------------------------------------------------------------------------------------
-Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned int sectors)
+Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned sectors)
 {
     int nVert = (1 + sectors) + (sectors * (sectors-3) + 1);
 
@@ -41,7 +41,7 @@ Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned int secto
         float r = sin(angleZ) * radius;
         float z = cos(angleZ);
 
-        for (int s=0; s<sectors; s++) {
+        for (unsigned s=0; s<sectors; s++) {
 
             float x = sin(stepXY*s);
             float y = cos(stepXY*s);
@@ -62,12 +62,12 @@ Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned int secto
     }
 
 
-    for (int ring = 0; ring<sectors-3; ring++) {
+    for (unsigned ring = 0; ring<sectors-3; ring++) {
         // r = sin(PI * ((ring+2)*stepZ)/2) * radius;
         float r = sin((ring+2)*angleZ) * radius;
         float z = cos((ring+2)*angleZ);
 
-        for (int s=0; s<sectors; s++) {
+        for (unsigned s=0; s<sectors; s++) {
 
             float x = sin(stepXY*s);
             float y = cos(stepXY*s);
@@ -92,8 +92,8 @@ Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned int secto
     *n++ = 0.f;
     *n++ = -1;
 
-    for (int ring = 0; ring<sectors-3; ring++) {
-        for (int s=0; s<sectors; s++) {
+    for (unsigned ring = 0; ring<sectors-3; ring++) {
+        for (unsigned s=0; s<sectors; s++) {
 
             int first = 1 +(ring*sectors);
             // Oberes Dreieck
@@ -109,7 +109,7 @@ Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned int secto
     }
 
     // Button
-    for (int s=0; s<sectors; s++) {
+    for (unsigned s=0; s<sectors; s++) {
         int first = 1+ ((sectors-3)*sectors);
         *i++ = first + s;
         *i++ = s == sectors - 1 ? (first) : (first + s + 1);

@@ -6,6 +6,7 @@
 #include <QVector3D>
 
 class LbaAnimation;
+class BinaryReader;
 class LbaBody
 {
 public:
@@ -78,7 +79,7 @@ public:
     LbaBody();
     virtual ~LbaBody();
 
-    bool fromBuffer(const QByteArray &buffer);
+    bool fromLba1Buffer(const QByteArray &buffer);
     bool animationFromBuffer(const QByteArray &buffer);
     void setAnimation(LbaAnimation *ani);
 
@@ -97,6 +98,14 @@ public:
     Bone   boneById(int id) const;
 
 private:
+
+    void loadLba1Points(BinaryReader &reader);
+    void loadLba1Bones(BinaryReader &reader);
+    void loadLba1Normals(BinaryReader &reader);
+    void loadLba1Polygones(BinaryReader &reader);
+    void loadLba1Lines(BinaryReader &reader);
+    void loadLba1Spheres(BinaryReader &reader);
+
     LbaAnimation *mAnimation;
     int           mAnimationKeyFrame;
 

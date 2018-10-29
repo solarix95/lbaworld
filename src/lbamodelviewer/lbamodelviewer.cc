@@ -29,27 +29,29 @@ void LbaModelViewer::loadModel()
 {
     int modelId = mUi.spbModel->value();
 
-    if (modelId >= (mUi.btnBody->isChecked() ? mRess.bodyCount(): mRess.invCount()))
+    LbaRess::Source source       = LbaRess::LBA1;
+    LbaRess::Content bodyContent = mUi.btnBody->isChecked() ? LbaRess::Body : LbaRess::StaticObjs;
+
+    if (modelId >= mRess.count(source,bodyContent))
         return;
 
-    QByteArray modelData =  mUi.btnBody->isChecked() ? mRess.bodyData(modelId) : mRess.invData(modelId);
+    QByteArray modelData =  mRess.data(source,bodyContent,modelId);
     if (modelData.isEmpty())
         return;
 
     LbaBody body;
-    body.fromBuffer(modelData);
+    body.fromLba1Buffer(modelData);
 
     LbaAnimation *ani = NULL;
     int keyFrame = -1;
     if (mUi.chkAni->isChecked()) {
         ani = new LbaAnimation();
-        ani->fromBuffer(mRess.animData(mUi.spbAniIndex->value()));
+        ani->fromBuffer(mRess.data(source,LbaRess::Anim,mUi.spbAniIndex->value()));
         keyFrame = qMin(mUi.spbAniFrame->value(), ani->keyFrameCount()-1);
     }
-    LbaPalette pal(mRess.ressData(0));
+    LbaPalette pal(mRess.data(source,LbaRess::Ress,0));
 
     int flags = 0;
-
 
     // TODO: proper QFlags<>..
     flags += mUi.chkPolygon->isChecked() ? 0x01 : 0;

@@ -16,49 +16,40 @@ public:
 
     void init();
 
-    /*
-       TODO: replace methods with
 
-    int        count(type) const;
-    QByteArray data(type, int index) const;
+    enum Source {
+        LBA1 = 0,   // Datasource: LBA1
+        LBA2 = 1,   // Datasource: LBA2
+        LBAW = 2    // Datasource: LBA World: additional open source game data
+    };
 
-    */
+    enum Content {
+        Body,        // Body.hqr
+        StaticObjs,  // LBA1: Invobj.hqr, LBA2: Objfix.hqr
+        Anim,        // Anim.hqr
+        File3d,      // LBA1: File3d.hqr
+        Ress,        // Ress.hqr
+        Sprites,     // Sprites.hqr
+        FlaSmpl      // LBA1: FLASAMP.HQR
+    };
 
-    // Body.HQR
-    int        bodyCount() const;
-    QByteArray bodyData(int index) const;
+    typedef QMap<Content,HqrFile*> LbaContent;
 
-    // Invobj.hqr
-    int        invCount() const;
-    QByteArray invData(int index) const;
-
-    // ANIM.HQR
-    int        animCount() const;
-    QByteArray animData(int index) const;
-
-    // File3D.HQR
-    int        dddCount() const;
-    QByteArray dddData(int index) const;
-
-    // RESS.HQR
-    int        ressCount() const;
-    QByteArray ressData(int index) const;
-
-    // Sprites.hqr -> http://lbafileinfo.kazekr.net/index.php?title=LBA1:Sprites.hqr
-    int        spritesCount() const;
-    QByteArray spriteData(int index) const;
+    int        count(Source source, Content content) const;
+    QByteArray data(Source source, Content content, int index) const;
 
     // Files..
     QStringList tracks() const; // ... from steam (
 
     QStringList flas() const;
     QByteArray  fla(const QString &name) const;
-    QByteArray  flaSample(int index) const; // from FLASAMP.HQR
 
 private:
-    QString findLbaData() const;
-    void    processDir(const QString &dirName);
-    void    processFiles(const QFileInfoList &files);
+    QString findLbaData(const QString &sourcename) const;
+    void    processDir(const QString &dirName, Source source);
+    void    processFiles(const QFileInfoList &files, Source source);
+
+    LbaContent  mContent[3]; // LBA1, LBA2, LBAWorld
 
 
     QString     mLbaRessFile;        // Ress.hqr, Palette,
