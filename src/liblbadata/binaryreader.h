@@ -15,8 +15,13 @@ public:
     bool atEnd() const;
 
     bool read(void* destPtr, int size);
+
     quint8 readUint8();
     qint16 readInt16();
+    quint16 readUint16();
+
+    qint32  getInt32(int pos) const;
+    quint32 getUint32(int pos) const;
 
     bool skip(int bytes);
     bool seek(int pos);

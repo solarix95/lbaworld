@@ -16,7 +16,8 @@ LbaModelViewer::LbaModelViewer(const LbaRess &ress)
     connect(mUi.chkLines,   &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
     connect(mUi.chkSpheres, &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
     connect(mUi.chkBones,   &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
-
+    connect(mUi.btnLba1,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
+    connect(mUi.btnLba2,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ void LbaModelViewer::loadModel()
 {
     int modelId = mUi.spbModel->value();
 
-    LbaRess::Source source       = LbaRess::LBA1;
+    LbaRess::Source source       = mUi.btnLba1->isChecked() ? LbaRess::LBA1 : LbaRess::LBA2;
     LbaRess::Content bodyContent = mUi.btnBody->isChecked() ? LbaRess::Body : LbaRess::StaticObjs;
 
     if (modelId >= mRess.count(source,bodyContent))
@@ -40,7 +41,10 @@ void LbaModelViewer::loadModel()
         return;
 
     LbaBody body;
-    body.fromLba1Buffer(modelData);
+    if (source == LbaRess::LBA1)
+        body.fromLba1Buffer(modelData);
+    else
+        body.fromLba2Buffer(modelData);
 
     LbaAnimation *ani = NULL;
     int keyFrame = -1;

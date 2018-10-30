@@ -71,6 +71,29 @@ qint16 BinaryReader::readInt16()
 }
 
 //-------------------------------------------------------------------------------------------
+quint16 BinaryReader::readUint16()
+{
+    quint16 ret;
+    bool done = read(&ret,2);
+    Q_ASSERT(done);
+    return ret;
+}
+
+//-------------------------------------------------------------------------------------------
+qint32 BinaryReader::getInt32(int pos) const
+{
+    Q_ASSERT(pos >= 0 && pos < mBuffer.length());
+    return *(qint32*)(mBuffer.constData() + pos);
+}
+
+//-------------------------------------------------------------------------------------------
+quint32 BinaryReader::getUint32(int pos) const
+{
+    Q_ASSERT(pos >= 0 && pos < mBuffer.length());
+    return *(quint32*)(mBuffer.constData() + pos);
+}
+
+//-------------------------------------------------------------------------------------------
 bool BinaryReader::skip(int size)
 {
     if ((mCursor + size) > tail())

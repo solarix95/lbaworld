@@ -42,6 +42,51 @@ bool LbaBody::fromLba1Buffer(const QByteArray &buffer)
 }
 
 //-------------------------------------------------------------------------------------------
+bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
+{
+    BinaryReader reader(buffer);
+
+    // https://github.com/agrande/lba2remake/blob/master/src/model/body.js
+    qint32 bodyFlag = reader.getInt32(0x00);
+
+
+    qint32 xMin = reader.getInt32(0x08);
+    qint32 xMax = reader.getInt32(0x0C);
+    qint32 yMin = reader.getInt32(0x10);
+    qint32 yMax = reader.getInt32(0x14);
+    qint32 zMin = reader.getInt32(0x18);
+    qint32 zMax = reader.getInt32(0x1C);
+    quint32 bonesSize = reader.getUint32(0x20);
+    quint32 bonesOffset = reader.getUint32(0x24);
+    quint32 verticesSize = reader.getUint32(0x28);
+    quint32 verticesOffset = reader.getUint32(0x2C);
+    quint32 normalsSize = reader.getUint32(0x30);
+    quint32 normalsOffset = reader.getUint32(0x34);
+    quint32 unk1Size = reader.getUint32(0x38);
+    quint32 unk1Offset = reader.getUint32(0x3C);
+    quint32 polygonsSize = reader.getUint32(0x40);
+    quint32 polygonsOffset = reader.getUint32(0x44);
+    quint32 linesSize = reader.getUint32(0x48);
+    quint32 linesOffset = reader.getUint32(0x4C);
+    quint32 spheresSize = reader.getUint32(0x50);
+    quint32 spheresOffset = reader.getUint32(0x54);
+    quint32 uvGroupsSize = reader.getUint32(0x58);
+    quint32 uvGroupsOffset = reader.getUint32(0x5C);
+
+    qDebug() << "LbaBody::fromLba2Buffer" << bonesSize  << verticesSize << normalsSize << polygonsSize << linesSize << spheresSize;
+
+    reader.seek(verticesOffset);
+    loadLba2Vertices(reader,verticesSize);
+
+    reader.seek(bonesOffset);
+    loadLba2Bones(reader,bonesSize);
+
+    reader.seek(normalsOffset);
+    loadLba2Normals(reader,normalsSize);
+
+}
+
+//-------------------------------------------------------------------------------------------
 bool LbaBody::animationFromBuffer(const QByteArray &buffer)
 {
     if (mAnimation)
@@ -297,7 +342,6 @@ void LbaBody::loadLba1Bones(BinaryReader &reader)
         mBones << b;
         qDebug() << "BONE" << i << firstPoint << numPoints << parentPoint  << parentBone << boneType << x << y << z << nrNormals;
     }
-
 }
 
 //-----------------------------------------------------------------------------------------
@@ -413,6 +457,66 @@ void LbaBody::loadLba1Spheres(BinaryReader &reader)
         s.size        = size;
         s.colorIndex  = color;
         mSpheres << s;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
+{
+    while (count > 0) {
+        /*
+            x: data.getInt16(index, true) / 0x4000,
+            y: data.getInt16(index + 2, true) / 0x4000,
+            z: data.getInt16(index + 4, true) / 0x4000,
+            bone: data.getUint16(index + 6, true)
+        */
+
+        qint16 x = reader.readInt16();
+        qint16 y = reader.readInt16();
+        qint16 z = reader.readInt16();
+        quint16 boneIndex = reader.readUint16();
+        qDebug() << "LBA2 VERTEX" << x << y << z << boneIndex;
+        count--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Bones(BinaryReader &reader, quint32 count)
+{
+    while (count > 0) {
+        /*
+            parent: rawBones[index],
+            vertex: rawBones[index + 1],
+            unk1: rawBones[index + 2],
+            unk2: rawBones[index + 3]
+        */
+
+        qint16 parent = reader.readInt16();
+        qint16 vertex = reader.readInt16();
+        qint16 unk1   = reader.readInt16();
+        qint16 unk2   = reader.readInt16();
+        qDebug() << "LBA2 BONE" << parent << vertex;
+        count--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Normals(BinaryReader &reader, quint32 count)
+{
+    /*
+            x: rawNormals[index] / 0x4000,
+            y: rawNormals[index + 1] / 0x4000,
+            z: rawNormals[index + 2] / 0x4000,
+            colour: Math.floor((rawNormals[index + 3] & 0x00FF) / 16)
+    */
+
+    while (count > 0) {
+        qint16 x = reader.readInt16();
+        qint16 y = reader.readInt16();
+        qint16 z   = reader.readInt16();
+        qint16 c   = (reader.readInt16() & 0x00FF)/16;
+        qDebug() << "LBA2 Normal" << x << y << z << c;
+        count--;
     }
 }
 

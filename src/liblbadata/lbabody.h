@@ -28,6 +28,7 @@ public:
     };
     typedef QList<Line> Lines;
 
+    /*
     struct Vertex {
         int vertexIndex;
         int normalIndex;
@@ -36,6 +37,7 @@ public:
         Vertex(const Vertex &o) : vertexIndex(o.vertexIndex), normalIndex(o.normalIndex) {}
     };
     typedef QList<Vertex> Vertices;
+    */
 
     typedef struct {
         float r,g,b;
@@ -80,6 +82,7 @@ public:
     virtual ~LbaBody();
 
     bool fromLba1Buffer(const QByteArray &buffer);
+    bool fromLba2Buffer(const QByteArray &buffer);
     bool animationFromBuffer(const QByteArray &buffer);
     void setAnimation(LbaAnimation *ani);
 
@@ -105,6 +108,10 @@ private:
     void loadLba1Polygones(BinaryReader &reader);
     void loadLba1Lines(BinaryReader &reader);
     void loadLba1Spheres(BinaryReader &reader);
+
+    void loadLba2Vertices(BinaryReader &reader, quint32 count);
+    void loadLba2Bones(BinaryReader &reader, quint32 count);
+    void loadLba2Normals(BinaryReader &reader, quint32 count);
 
     LbaAnimation *mAnimation;
     int           mAnimationKeyFrame;
