@@ -21,9 +21,9 @@ static inline void MatrixAsUniform(QOpenGLFunctions *f, GLuint location, QMatrix
     v[vindex].p.y = points[polygons[i].vertices[V]].y/f; \
     v[vindex].p.z = points[polygons[i].vertices[V]].z/f; \
     v[vindex].w   = 1.0;                                   \
-    v[vindex].n.x = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].x : 0;  \
-    v[vindex].n.y = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].y : 0;  \
-    v[vindex].n.z = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].z : 0;  \
+    v[vindex].n.x = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].x() : 0;  \
+    v[vindex].n.y = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].y() : 0;  \
+    v[vindex].n.z = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].z() : 0;  \
     normalize(v[vindex].n);                                \
     v[vindex].c.x = 3*qRed(  colorTable[polygons[i].lbaColorIndex])/255.0; \
     v[vindex].c.y = 3*qGreen(colorTable[polygons[i].lbaColorIndex])/255.0; \
@@ -195,7 +195,7 @@ void Lbw3dWidget::setupModels()
         LbaBody::Spheres spheres = mBody.spheres();
 
         for (int i=0; i< spheres.count(); i++) {
-            Lbw3dSphere s(mBody.points()[spheres[i].centerPoint],spheres[i].size/800.0,5);
+            Lbw3dSphere s(mBody.vertices()[spheres[i].centerPoint],spheres[i].size/800.0,5);
             Shape lbaModel;
             LbwVertex *v = s.vertices(lbaModel.verticesCount, mPalette.palette()[spheres[i].colorIndex]); // QColor(Qt::green).rgb());
             lbaModel.vertexBuffer  = makeBO(f,GL_ARRAY_BUFFER,v,lbaModel.verticesCount * sizeof(LbwVertex),GL_STATIC_DRAW);
@@ -247,9 +247,9 @@ LbwVertex *Lbw3dWidget::verticesFromBody(const LbaBody &body, const LbaPalette &
 {
     LbwVertex *v = NULL;
 
-    const LbaBody::Points   &points   = body.points();
-    const LbaBody::Points   &normals  = body.normals();
-    const LbaBody::Polygons &polygons = body.polygons();
+    const LbaBody::Vertices   &points   = body.vertices();
+    const LbaBody::Normals    &normals  = body.normals();
+    const LbaBody::Polygons   &polygons = body.polygons();
 
     // Array von Triangles zusammenstellen:
 
@@ -337,8 +337,8 @@ LbwVertex *Lbw3dWidget::linesFromBody(const LbaBody &body, const LbaPalette &pal
 {
     LbwVertex *v = NULL;
 
-    const LbaBody::Points   &points   = body.points();
-    const LbaBody::Lines    &lines    = body.lines();
+    const LbaBody::Vertices   &points   = body.vertices();
+    const LbaBody::Lines      &lines    = body.lines();
     count = lines.count();
 
     v = new LbwVertex[count*2];
@@ -401,8 +401,8 @@ void Lbw3dWidget::createVertexByBone(const LbaBody &body, LbwVertex *&v, int bon
     Q_ASSERT(bone.id >= 0);
     LbaBody::Bone parent = body.boneById(bone.parentId);
     if (parent.id >= 0) {
-        LbaBody::Point p2 = body.points()[parent.parentVertex];
-        LbaBody::Point p1 = body.points()[bone.parentVertex];
+        LbaBody::Vertex p2 = body.vertices()[parent.parentVertex];
+        LbaBody::Vertex p1 = body.vertices()[bone.parentVertex];
 
         float f = 800;
         v[0].p.x = p1.x/f;
@@ -469,16 +469,13 @@ LbwVertex *Lbw3dWidget::spheresFromBody(const LbaBody &body, const LbaPalette &p
 {
     LbwVertex *v = NULL;
 
-    const LbaBody::Points   &points   = body.points();
-    const LbaBody::Spheres  &spheres  = body.spheres();
+    const LbaBody::Vertices   &points   = body.vertices();
+    const LbaBody::Spheres    &spheres  = body.spheres();
     count = spheres.count();
-
 
     v = new LbwVertex[count*2*210];
     int vindex = 0;
     const QVector<QRgb> &colorTable = pal.palette();
-
-
 
     float f = 800;
     for (int s=0; s<spheres.count(); s++) {

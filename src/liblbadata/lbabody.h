@@ -12,13 +12,18 @@ class LbaBody
 public:
 
     //-----------------------------------------------------------------------------------------
-    struct Point {
+    // typedef QVector3D Point;
+    struct Vertex {
         float x,y,z;
+        int   boneId;
 
-        Point(float px, float py, float pz) : x(px), y(py), z(pz) {}
-        Point(const Point &o) : x(o.x), y(o.y), z(o.z) {}
+        Vertex(float px, float py, float pz, int b = -1) : x(px), y(py), z(pz), boneId(b) {}
+        Vertex(const Vertex &o) : x(o.x), y(o.y), z(o.z), boneId(o.boneId)  {}
     };
-    typedef QList<Point> Points;
+    typedef QList<Vertex>      Vertices;
+    typedef QVector3D          Normal;
+    typedef QList<Normal>      Normals;
+
 
     struct Line {
         int p0;
@@ -56,14 +61,14 @@ public:
         int        parentId;
         int        boneType;
 
-        int        firstVertex;
-        int        numVertices;
+        // int        firstVertex;
+        // int        numVertices;
         int        parentVertex;
 
         float      rotateX;
         float      rotateY;
         float      rotateZ;
-        Bone() : id(-1) {}
+        Bone(int i=-1, int p=-1, int t=0, int pv=-1) : id(i), parentId(p), boneType(t), parentVertex(pv), rotateX(0), rotateY(0), rotateZ(0) {}
     //    int
     };
     typedef QList<Bone>    Bones;
@@ -87,10 +92,10 @@ public:
     void setAnimation(LbaAnimation *ani);
 
     void translateVertices(int keyFrame = -1);
-    void translateVertices(int parentId, QMatrix4x4 matrix, Points &vertices);
+    void translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices);
 
-    const Points   &points() const;
-    const Points   &normals() const;
+    const Vertices &vertices() const;
+    const Normals  &normals() const;
     const Polygons &polygons() const;
     Polygon         polygonByPoint(int pointIndex) const;
     const Bones    &bones() const;
@@ -99,6 +104,7 @@ public:
 
     Bones  childsOfBone(int parentId) const;
     Bone   boneById(int id) const;
+    QList<int> verticesByBone(int id) const;
 
 private:
 
@@ -116,13 +122,13 @@ private:
     LbaAnimation *mAnimation;
     int           mAnimationKeyFrame;
 
-    Points   mPoints;
-    Points   mPointsTranslated;
-    Points   mNormals;
-    Polygons mPolygones;
-    Bones    mBones;
-    Lines    mLines;
-    Spheres  mSpheres;
+    Vertices  mVertices;
+    Vertices  mVerticesTranslated;
+    Normals   mNormals;
+    Polygons  mPolygones;
+    Bones     mBones;
+    Lines     mLines;
+    Spheres   mSpheres;
 
 };
 

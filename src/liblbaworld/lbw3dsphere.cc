@@ -7,7 +7,7 @@
 #endif
 
 //-------------------------------------------------------------------------------------------------
-Lbw3dSphere::Lbw3dSphere(LbaBody::Point center, float radius, unsigned sectors)
+Lbw3dSphere::Lbw3dSphere(LbaBody::Vertex center, float radius, unsigned sectors)
 {
     int nVert = (1 + sectors) + (sectors * (sectors-3) + 1);
 

@@ -10,7 +10,7 @@
 class Lbw3dSphere
 {
 public:
-    Lbw3dSphere(LbaBody::Point center, float radius, unsigned sectors);
+    Lbw3dSphere(LbaBody::Vertex center, float radius, unsigned sectors);
 
     GLushort *indices(int &count) const;
     LbwVertex *vertices(int &count, QRgb c) const;

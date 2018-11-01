@@ -84,6 +84,7 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
     reader.seek(normalsOffset);
     loadLba2Normals(reader,normalsSize);
 
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -112,26 +113,26 @@ void LbaBody::setAnimation(LbaAnimation *ani)
 void LbaBody::translateVertices(int keyFrame)
 {
     mAnimationKeyFrame = keyFrame;
-    Points tv = mPoints;
+    Vertices tv = mVertices;
 
    // QVector3D matrix(0,0,0);
    QMatrix4x4 matrix;
    translateVertices(-1,matrix, tv);
 
-   mPointsTranslated = tv;
+   mVerticesTranslated = tv;
 }
 
 //-------------------------------------------------------------------------------------------
-void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Points &vertices)
+void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices)
 {
     Bones nextBones = childsOfBone(parentId);
 
     for(int i=0; i<nextBones.count(); i++) {
 
         QMatrix4x4 subMatrix;
-        subMatrix.translate( mPoints[nextBones[i].parentVertex].x,
-                             mPoints[nextBones[i].parentVertex].y,
-                             mPoints[nextBones[i].parentVertex].z);
+        subMatrix.translate( mVertices[nextBones[i].parentVertex].x,
+                             mVertices[nextBones[i].parentVertex].y,
+                             mVertices[nextBones[i].parentVertex].z);
 
 
         QMatrix4x4 subMatrixAni;
@@ -153,14 +154,15 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Points &vertice
 
         QMatrix4x4 boneMatrix = matrix * subMatrix * subMatrixAni;
 
-        for (int v=nextBones[i].firstVertex; v < (nextBones[i].firstVertex + nextBones[i].numVertices); v++) {
+        QList<int> vertexIndexes = verticesByBone(nextBones[i].id);
+        for (int v=0; v < vertexIndexes.count(); v++) {
 
-            QVector4D vec(mPoints[v].x,mPoints[v].y,mPoints[v].z,1);
+            QVector4D vec(mVertices[vertexIndexes[v]].x,mVertices[vertexIndexes[v]].y,mVertices[vertexIndexes[v]].z,1);
             vec = boneMatrix * vec;
 
-            vertices[v].x = vec.x();
-            vertices[v].y = vec.y();
-            vertices[v].z = vec.z();
+            vertices[vertexIndexes[v]].x = vec.x();
+            vertices[vertexIndexes[v]].y = vec.y();
+            vertices[vertexIndexes[v]].z = vec.z();
 
         }
         translateVertices(nextBones[i].id,boneMatrix, vertices);
@@ -169,13 +171,13 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Points &vertice
 }
 
 //-----------------------------------------------------------------------------------------
-const LbaBody::Points &LbaBody::points() const
+const LbaBody::Vertices &LbaBody::vertices() const
 {
-    return mPointsTranslated.count() > 0 ? mPointsTranslated : mPoints;
+    return mVerticesTranslated.count() > 0 ? mVerticesTranslated : mVertices;
 }
 
 //-------------------------------------------------------------------------------------------
-const LbaBody::Points &LbaBody::normals() const
+const LbaBody::Normals &LbaBody::normals() const
 {
     return mNormals;
 }
@@ -245,12 +247,24 @@ LbaBody::Bone LbaBody::boneById(int id) const
 }
 
 //-----------------------------------------------------------------------------------------
+QList<int> LbaBody::verticesByBone(int id) const
+{
+    QList<int> ret;
+    for (int i=0; i<mVertices.count(); i++) {
+        if (mVertices[i].boneId == id)
+            ret << i;
+    }
+
+    return ret;
+}
+
+//-----------------------------------------------------------------------------------------
 void LbaBody::loadLba1Points(BinaryReader &reader)
 {
     quint16 verticesCount;
     reader.read(&verticesCount, 2);
 
-    mPoints.clear();
+    mVertices.clear();
 
     for (int i=0; i<verticesCount; i++) {
         qint16 x,y,z;
@@ -258,7 +272,7 @@ void LbaBody::loadLba1Points(BinaryReader &reader)
         reader.read(&y, 2);
         reader.read(&z, 2);
         qDebug() << "Point" << i << x << y << z;
-        mPoints << Point(x,y,z);
+        mVertices << Vertex(x,y,z);
     }
 }
 
@@ -331,10 +345,15 @@ void LbaBody::loadLba1Bones(BinaryReader &reader)
         b.parentId     = parentBone;
         b.boneType     = boneType;
 
-        b.firstVertex  = firstPoint;
-        b.numVertices  = numPoints;
-        b.parentVertex = parentPoint;
+        // LBA1-Format
+        // b.firstVertex  = firstPoint;
+        // b.numVertices  = numPoints;
 
+        // LBA2-Format:
+        for (int v=0; v<numPoints; v++)
+            mVertices[firstPoint + v].boneId = i;
+
+        b.parentVertex = parentPoint;
         b.rotateX      = x;
         b.rotateY      = y;
         b.rotateZ      = z;
@@ -357,7 +376,7 @@ void LbaBody::loadLba1Normals(BinaryReader &reader)
         reader.read(&z, 2);
         reader.read(&w, 2); // Unknown Word..
         // qDebug() << "Normal" << i << x << y << z;
-        mNormals << Point(x,y,z);
+        mNormals << Normal(x,y,z);
     }
 }
 
@@ -476,6 +495,7 @@ void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
         qint16 z = reader.readInt16();
         quint16 boneIndex = reader.readUint16();
         qDebug() << "LBA2 VERTEX" << x << y << z << boneIndex;
+        mVertices << Vertex(x,y,z,boneIndex);
         count--;
     }
 }
@@ -483,7 +503,7 @@ void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
 //-----------------------------------------------------------------------------------------
 void LbaBody::loadLba2Bones(BinaryReader &reader, quint32 count)
 {
-    while (count > 0) {
+    for (int i=0; i<count; i++) {
         /*
             parent: rawBones[index],
             vertex: rawBones[index + 1],
@@ -496,6 +516,7 @@ void LbaBody::loadLba2Bones(BinaryReader &reader, quint32 count)
         qint16 unk1   = reader.readInt16();
         qint16 unk2   = reader.readInt16();
         qDebug() << "LBA2 BONE" << parent << vertex;
+        mBones << Bone(i,parent,0,vertex);
         count--;
     }
 }
@@ -516,6 +537,7 @@ void LbaBody::loadLba2Normals(BinaryReader &reader, quint32 count)
         qint16 z   = reader.readInt16();
         qint16 c   = (reader.readInt16() & 0x00FF)/16;
         qDebug() << "LBA2 Normal" << x << y << z << c;
+        mNormals << Normal(x,y,z);
         count--;
     }
 }
