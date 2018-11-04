@@ -87,6 +87,9 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
     reader.seek(polygonsOffset);
     loadLba2Polygones(reader,linesOffset - polygonsOffset);
 
+    reader.seek(spheresOffset);
+    loadLba2Spheres(reader,spheresSize);
+
     return true;
 }
 
@@ -623,7 +626,7 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
     const auto currentPos      = reader.pos();
     const auto numVertex       = (renderType & 0x8000) ? 4 : 3;
     const bool hasExtra        = (renderType & 0x4000);
-    const bool hasTex          = (renderType & 0x8 && blockSize > 16);
+    const bool hasTex          = ((renderType & 0x8) && (blockSize > 16));
     const bool hasTransparency = (renderType == 2);
 
     // Blocksizes:
@@ -656,23 +659,23 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
     // poly.intensity = intensity;
 
     if (hasTex) {
-            for (auto k = 0; k < numVertex; k++) {
-                /*
+        for (auto k = 0; k < numVertex; k++) {
+            /*
                 poly.unkX[k] = data.getInt8(offset + 12 + (k * 4), true);
                 poly.texX[k] = data.getInt8(offset + 13 + (k * 4), true);
                 poly.unkY[k] = data.getInt8(offset + 14 + (k * 4), true);
                 poly.texY[k] = data.getInt8(offset + 15 + (k * 4), true);
                 */
-                auto unkX = reader.readInt8();
-                auto texX = reader.readInt8();
-                auto unkY = reader.readInt8();
-                auto texY = reader.readInt8();
-            }
-            // for blocksize 32 with quad texture
-            if (numVertex == 4) {
-                // poly.tex = data.getUint8(offset + 28, true);
-                auto tex = reader.readUint8();
-            }
+            auto unkX = reader.readInt8();
+            auto texX = reader.readInt8();
+            auto unkY = reader.readInt8();
+            auto texY = reader.readInt8();
+        }
+        // for blocksize 32 with quad texture
+        if (numVertex == 4) {
+            // poly.tex = data.getUint8(offset + 28, true);
+            auto tex = reader.readUint8();
+        }
     }
 
     while ((reader.pos() - currentPos) < blockSize)
@@ -680,6 +683,47 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
 
     Q_ASSERT((reader.pos() - currentPos) == blockSize);
     return p;
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Spheres(BinaryReader &reader, quint32 count)
+{
+    /*
+            unk1: rawSpheres[index],
+            colour: Math.floor((rawSpheres[index + 1] & 0x00FF) / 16),
+            vertex: rawSpheres[index + 2],
+            size: rawSpheres[index + 3] / 0x4000
+*/
+
+    while (count > 0) {
+        const auto unk1   = reader.readUint16();
+        const auto color  = (reader.readUint16() & 0x00FF)/16;
+        const auto vertex = reader.readUint16();
+        const auto size   = reader.readUint16();
+        qDebug() << "LBA2 Sphere" << vertex << size << color;
+        mSpheres << Sphere(vertex,size,color);
+        count--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Lines(BinaryReader &reader, quint32 count)
+{
+    /*
+            unk1: rawLines[index],
+            colour: Math.floor((rawLines[index + 1] & 0x00FF) / 16),
+            vertex1: rawLines[index + 2],
+            vertex2: rawLines[index + 3]
+*/
+    while (count > 0) {
+        const auto unk1   = reader.readUint16();
+        const auto color  = (reader.readUint16() & 0x00FF)/16;
+        const auto vertex1 = reader.readUint16();
+        const auto vertex2 = reader.readUint16();
+        qDebug() << "LBA2 Line" << vertex1 << vertex2 << color;
+        mLines << Line(vertex1,vertex2);
+        count--;
+    }
 }
 
 //-----------------------------------------------------------------------------------------

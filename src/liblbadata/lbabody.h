@@ -40,17 +40,6 @@ public:
     };
     typedef QList<Line> Lines;
 
-    /*
-    struct Vertex {
-        int vertexIndex;
-        int normalIndex;
-
-        Vertex(int vi, int ni) :  vertexIndex(vi), normalIndex(ni) {}
-        Vertex(const Vertex &o) : vertexIndex(o.vertexIndex), normalIndex(o.normalIndex) {}
-    };
-    typedef QList<Vertex> Vertices;
-    */
-
     typedef struct {
         float r,g,b;
     } VertexColor;
@@ -80,14 +69,13 @@ public:
     };
     typedef QList<Bone>    Bones;
 
-    typedef struct {
+    struct Sphere {
         int        centerPoint;
         int        size;
         int        colorIndex;
-       // Sphere(int p, int s, int c) : centerPoint(p), size(s), colorIndex(c) {}
-    } Sphere;
+        Sphere(int p=-1, int s=0, int c=0) : centerPoint(p), size(s), colorIndex(c) {}
+    };
     typedef QList<Sphere>    Spheres;
-
 
     //-----------------------------------------------------------------------------------------
     LbaBody();
@@ -128,6 +116,8 @@ private:
     void loadLba2Normals(BinaryReader &reader, quint32 count);
     void loadLba2Polygones(BinaryReader &reader, quint32 count);
     Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize);
+    void loadLba2Spheres(BinaryReader &reader, quint32 count);
+    void loadLba2Lines(BinaryReader &reader, quint32 count);
 
     void validate();
 
