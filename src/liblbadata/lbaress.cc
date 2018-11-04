@@ -153,6 +153,9 @@ void LbaRess::processFiles(const QFileInfoList &files, Source source)
         if (next == "sprites.hqr" && !mContent[source][Sprites])
             mContent[source][Sprites] = new HqrFile(files[i].absoluteFilePath());
 
+        if (next == "spriraw.hqr" && !mContent[source][SpritesRaw])
+            mContent[source][SpritesRaw] = new HqrFile(files[i].absoluteFilePath());
+
         if (next == "file3d.hqr" && !mContent[source][File3d])
             mContent[source][File3d] = new HqrFile(files[i].absoluteFilePath());
     }

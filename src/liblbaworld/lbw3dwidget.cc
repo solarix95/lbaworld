@@ -21,13 +21,20 @@ static inline void MatrixAsUniform(QOpenGLFunctions *f, GLuint location, QMatrix
     v[vindex].p.y = points[polygons[i].vertices[V]].y/f; \
     v[vindex].p.z = points[polygons[i].vertices[V]].z/f; \
     v[vindex].w   = 1.0;                                   \
-    v[vindex].n.x = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].x() : 0;  \
-    v[vindex].n.y = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].y() : 0;  \
-    v[vindex].n.z = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].z() : 0;  \
-    normalize(v[vindex].n);                                \
-    v[vindex].c.x = 3*qRed(  colorTable[polygons[i].lbaColorIndex])/255.0; \
-    v[vindex].c.y = 3*qGreen(colorTable[polygons[i].lbaColorIndex])/255.0; \
-    v[vindex].c.z = 3*qBlue( colorTable[polygons[i].lbaColorIndex])/255.0;
+    v[vindex].n.x = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].dx : 0;  \
+    v[vindex].n.y = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].dy : 0;  \
+    v[vindex].n.z = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].dz : 0;  \
+    normalize(v[vindex].n);                   \
+    { \
+       int colorIndex = polygons[i].normals.count() > 0 ? normals[polygons[i].normals[V]].colorIndex : polygons[i].lbaColorIndex; \
+       v[vindex].c.x = 3*qRed(  colorTable[colorIndex])/255.0; \
+       v[vindex].c.y = 3*qGreen(colorTable[colorIndex])/255.0; \
+       v[vindex].c.z = 3*qBlue( colorTable[colorIndex])/255.0;\
+    }
+
+    // v[vindex].c.x = 3*qRed(  colorTable[polygons[i].lbaColorIndex])/255.0;
+    // v[vindex].c.y = 3*qGreen(colorTable[polygons[i].lbaColorIndex])/255.0;
+    // v[vindex].c.z = 3*qBlue( colorTable[polygons[i].lbaColorIndex])/255.0;
 
 void normalize(LbwVector &v)
 {

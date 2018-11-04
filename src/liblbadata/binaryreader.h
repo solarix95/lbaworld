@@ -16,6 +16,7 @@ public:
 
     bool read(void* destPtr, int size);
 
+    qint8  readInt8();
     quint8 readUint8();
     qint16 readInt16();
     quint16 readUint16();

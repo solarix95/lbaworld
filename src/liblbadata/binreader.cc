@@ -53,6 +53,15 @@ bool BinaryReader::read(void *destPtr, int size)
 }
 
 //-------------------------------------------------------------------------------------------
+qint8 BinaryReader::readInt8()
+{
+    qint8 ret;
+    bool done = read(&ret,1);
+    Q_ASSERT(done);
+    return ret;
+}
+
+//-------------------------------------------------------------------------------------------
 quint8 BinaryReader::readUint8()
 {
     quint8 ret;

@@ -8,9 +8,10 @@
 class LbaSprite
 {
 public:
-    LbaSprite(const LbaPalette &pal, const QByteArray &buffer = QByteArray());
+    LbaSprite(const LbaPalette &pal, const QByteArray &buffer = QByteArray(), bool raw = false);
 
     bool fromBuffer(const QByteArray &buffer);
+    bool fromRawBuffer(const QByteArray &buffer);
 
     const QImage &image() const;
 

@@ -30,6 +30,7 @@ public:
         File3d,      // LBA1: File3d.hqr
         Ress,        // Ress.hqr
         Sprites,     // Sprites.hqr
+        SpritesRaw,  // LBA2: Spriraw.hqr
         FlaSmpl      // LBA1: FLASAMP.HQR
     };
 

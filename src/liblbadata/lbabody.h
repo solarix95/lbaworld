@@ -21,7 +21,14 @@ public:
         Vertex(const Vertex &o) : x(o.x), y(o.y), z(o.z), boneId(o.boneId)  {}
     };
     typedef QList<Vertex>      Vertices;
-    typedef QVector3D          Normal;
+
+    struct Normal {
+        float dx,dy,dz;
+        int   colorIndex;
+
+        Normal(float x, float y, float z, int c = -1) : dx(x), dy(y), dz(z), colorIndex(c) {}
+        Normal(const Normal &o) : dx(o.dx), dy(o.dy), dz(o.dz), colorIndex(o.colorIndex)  {}
+    };
     typedef QList<Normal>      Normals;
 
 
@@ -114,10 +121,15 @@ private:
     void loadLba1Polygones(BinaryReader &reader);
     void loadLba1Lines(BinaryReader &reader);
     void loadLba1Spheres(BinaryReader &reader);
+    int  updateNormal(int normalIndex, int colorIndex);
 
     void loadLba2Vertices(BinaryReader &reader, quint32 count);
     void loadLba2Bones(BinaryReader &reader, quint32 count);
     void loadLba2Normals(BinaryReader &reader, quint32 count);
+    void loadLba2Polygones(BinaryReader &reader, quint32 count);
+    Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize);
+
+    void validate();
 
     LbaAnimation *mAnimation;
     int           mAnimationKeyFrame;

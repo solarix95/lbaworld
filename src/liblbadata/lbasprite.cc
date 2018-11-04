@@ -4,10 +4,13 @@
 #include "binaryreader.h"
 
 //-------------------------------------------------------------------------------------------
-LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer)
+LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer, bool raw)
     : mPalette(pal)
 {
-    fromBuffer(buffer);
+    if (raw)
+        fromRawBuffer(buffer);
+    else
+        fromBuffer(buffer);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -71,6 +74,48 @@ bool LbaSprite::fromBuffer(const QByteArray &buffer)
     }
 
     mImage = image;
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaSprite::fromRawBuffer(const QByteArray &buffer)
+{
+    // https://github.com/agrande/lba2remake/blob/master/src/iso/sprites.js
+
+    /*
+ const dataView = new DataView(sprites.getEntry(entry));
+    const width = dataView.getUint8(8);
+    const height = dataView.getUint8(9);
+    const buffer = new ArrayBuffer(width * height);
+    const pixels = new Uint8Array(buffer);
+    let ptr = 12;
+    for (let y = 0; y < height; y += 1) {
+        let x = 0;
+        const offset = () => (y * width) + x;
+        for (let run = 0; run < width; run += 1) {
+            pixels[offset()] = dataView.getUint8(ptr);
+            ptr += 1;
+            x += 1;
+        }
+}
+    */
+    BinaryReader reader(buffer);
+    reader.skip(8);
+    const auto width   = reader.readUint8();
+    const auto height  = reader.readUint8();
+    reader.skip(2);
+    Q_ASSERT(reader.pos() == 12);
+
+    QImage image(width, height, QImage::Format_ARGB32);
+
+    for (auto y = 0; y < height; y++) {
+        for (auto x = 0; x < width; x++) {
+            image.setPixel(x,y,mPalette.palette()[reader.readUint8()]);
+        }
+    }
+
+    mImage = image;
+
     return true;
 }
 

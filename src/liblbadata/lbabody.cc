@@ -8,7 +8,7 @@
 
 //-------------------------------------------------------------------------------------------
 LbaBody::LbaBody()
- : mAnimation(NULL)
+    : mAnimation(NULL)
 {
 
 }
@@ -84,6 +84,9 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
     reader.seek(normalsOffset);
     loadLba2Normals(reader,normalsSize);
 
+    reader.seek(polygonsOffset);
+    loadLba2Polygones(reader,linesOffset - polygonsOffset);
+
     return true;
 }
 
@@ -115,11 +118,11 @@ void LbaBody::translateVertices(int keyFrame)
     mAnimationKeyFrame = keyFrame;
     Vertices tv = mVertices;
 
-   // QVector3D matrix(0,0,0);
-   QMatrix4x4 matrix;
-   translateVertices(-1,matrix, tv);
+    // QVector3D matrix(0,0,0);
+    QMatrix4x4 matrix;
+    translateVertices(-1,matrix, tv);
 
-   mVerticesTranslated = tv;
+    mVerticesTranslated = tv;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -131,8 +134,8 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &verti
 
         QMatrix4x4 subMatrix;
         subMatrix.translate( mVertices[nextBones[i].parentVertex].x,
-                             mVertices[nextBones[i].parentVertex].y,
-                             mVertices[nextBones[i].parentVertex].z);
+                mVertices[nextBones[i].parentVertex].y,
+                mVertices[nextBones[i].parentVertex].z);
 
 
         QMatrix4x4 subMatrixAni;
@@ -147,8 +150,8 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &verti
 
         } else {
             subMatrixAni.translate( nextBones[i].rotateX/800.0,
-                                 nextBones[i].rotateY/800.0,
-                                 nextBones[i].rotateZ/800.0);
+                                    nextBones[i].rotateY/800.0,
+                                    nextBones[i].rotateZ/800.0);
         }
 
 
@@ -404,7 +407,8 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
                 vertex /= 6;
                 // qDebug() << "  Vertex" << vertex << normal;
                 p.vertices << vertex;
-                p.normals  << normal;
+                p.normals  << updateNormal(normal,colorIndex);;
+
                 // polygon_vertices.append((v, normal))
             }
         } else if (renderType >= 7) {      // one normal for the whole polygon
@@ -415,7 +419,8 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
                 vertex /= 6;
                 // qDebug() << "  Vertex" << vertex << normal;
                 p.vertices << vertex;
-                p.normals  << normal;
+                p.normals  << updateNormal(normal,colorIndex);;
+
                 // polygon_vertices.append((v, normal))
             }
         } else {                           // no normal
@@ -423,7 +428,7 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
                 quint16 vertex;
                 reader.read(&vertex,2);
                 vertex /= 6;
-               p.vertices << vertex;
+                p.vertices << vertex;
                 // qDebug() << "  Vertex" << vertex;
                 // polygon_vertices.append((v, ))
             }
@@ -480,6 +485,29 @@ void LbaBody::loadLba1Spheres(BinaryReader &reader)
 }
 
 //-----------------------------------------------------------------------------------------
+int LbaBody::updateNormal(int normalIndex, int colorIndex)
+/*
+  LBA1: Color by Polygon.
+  LBA2: Color by Normal.
+
+  To make it compatible: Map Polygon-Color to Normal-Color. If Normal is already in
+  is (with another color), than clone it and set the LBA1-Polygon-Color.
+*/
+{
+    Q_ASSERT(normalIndex >= 0 && normalIndex < mNormals.count());
+    Q_ASSERT(colorIndex >= 0 && colorIndex <= 255);
+
+    if (mNormals[normalIndex].colorIndex >= 0 && mNormals[normalIndex].colorIndex != colorIndex) {
+        qWarning() << "Cannot update color of normal" << normalIndex << mNormals[normalIndex].colorIndex << colorIndex;
+        mNormals << mNormals[normalIndex];
+        mNormals.last().colorIndex = colorIndex;
+        return mNormals.count() - 1;
+    }
+    mNormals[normalIndex].colorIndex = colorIndex;
+    return normalIndex;
+}
+
+//-----------------------------------------------------------------------------------------
 void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
 {
     while (count > 0) {
@@ -490,10 +518,10 @@ void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
             bone: data.getUint16(index + 6, true)
         */
 
-        qint16 x = reader.readInt16();
-        qint16 y = reader.readInt16();
-        qint16 z = reader.readInt16();
-        quint16 boneIndex = reader.readUint16();
+        const auto x = reader.readInt16();
+        const auto y = reader.readInt16();
+        const auto z = reader.readInt16();
+        const auto boneIndex = reader.readUint16();
         qDebug() << "LBA2 VERTEX" << x << y << z << boneIndex;
         mVertices << Vertex(x,y,z,boneIndex);
         count--;
@@ -511,10 +539,10 @@ void LbaBody::loadLba2Bones(BinaryReader &reader, quint32 count)
             unk2: rawBones[index + 3]
         */
 
-        qint16 parent = reader.readInt16();
-        qint16 vertex = reader.readInt16();
-        qint16 unk1   = reader.readInt16();
-        qint16 unk2   = reader.readInt16();
+        const auto parent = reader.readInt16();
+        const auto vertex = reader.readInt16();
+        const auto unk1   = reader.readInt16();
+        const auto unk2   = reader.readInt16();
         qDebug() << "LBA2 BONE" << parent << vertex;
         mBones << Bone(i,parent,0,vertex);
         count--;
@@ -532,13 +560,139 @@ void LbaBody::loadLba2Normals(BinaryReader &reader, quint32 count)
     */
 
     while (count > 0) {
-        qint16 x = reader.readInt16();
-        qint16 y = reader.readInt16();
-        qint16 z   = reader.readInt16();
-        qint16 c   = (reader.readInt16() & 0x00FF)/16;
+        const auto x = reader.readInt16();
+        const auto y = reader.readInt16();
+        const auto z   = reader.readInt16();
+        const auto c   = (reader.readInt16() & 0x00FF)/16;
         qDebug() << "LBA2 Normal" << x << y << z << c;
-        mNormals << Normal(x,y,z);
+        mNormals << Normal(x,y,z,c);
         count--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count)
+{
+    /*
+         const renderType = data.getUint16(offset, true);
+        const numPolygons = data.getUint16(offset + 2, true);
+        const sectionSize = data.getUint16(offset + 4, true);
+        // const shade = data.getUint16(offset + 6, true);
+        offset += 8;
+
+        if (sectionSize === 0)
+            break;
+
+        const blockSize = ((sectionSize - 8) / numPolygons);
+
+        for (let j = 0; j < numPolygons; j += 1) {
+            const poly = loadPolygon(data, offset, renderType, blockSize);
+            object.polygons.push(poly);
+            offset += blockSize;
+        }
+    */
+
+    qint32 offset = reader.pos();
+    while ((reader.pos() - offset) < count) {
+        const auto  currentPos = reader.pos();
+        const auto  renderType  = reader.readUint16();
+        const auto  numPolygons = reader.readUint16();
+        const auto  sectionSize = reader.readUint16();
+        // const shade = data.getUint16(offset + 6, true);
+        reader.skip(2);
+        if (sectionSize == 0) {
+            qWarning() << "LbaBody::loadLba2Polygones" << "Invalid section size";
+            break;
+        }
+
+        const auto blockSize = ((sectionSize - 8) / numPolygons);
+        for (auto j = 0; j < numPolygons; j += 1) {
+            const auto p = loadLba2Polygon(reader, renderType, blockSize);
+            mPolygones << p;
+        }
+
+        Q_ASSERT((reader.pos() - currentPos) == sectionSize);
+    }
+
+    validate();
+}
+
+//-----------------------------------------------------------------------------------------
+LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize)
+{
+    const auto currentPos      = reader.pos();
+    const auto numVertex       = (renderType & 0x8000) ? 4 : 3;
+    const bool hasExtra        = (renderType & 0x4000);
+    const bool hasTex          = (renderType & 0x8 && blockSize > 16);
+    const bool hasTransparency = (renderType == 2);
+
+    // Blocksizes:
+    // Quad and Extra = 16
+    // Quad and Tex = 32
+    // Quad and Color = 12
+    // Tri and Extra = 16
+    // Tri and Tex = 24
+    // Tri and Color = 12
+
+    Polygon p;
+    // vertex block
+    for (auto k = 0; k < numVertex; k += 1) {
+        p.vertices <<  reader.readUint16();
+        p.normals  << p.vertices.last();
+    }
+
+    // special case for trianguled textures
+    if (hasTex && numVertex == 3) {
+        const auto tex = reader.readUint8();
+        // p.tex = tex
+    }
+
+    auto color = reader.readUint16();
+    color = (color & 0x00FF) / 16;
+    p.lbaColorIndex = color;
+
+    // polygon color intensity
+    const auto intensity = reader.readInt16();
+    // poly.intensity = intensity;
+
+    if (hasTex) {
+            for (auto k = 0; k < numVertex; k++) {
+                /*
+                poly.unkX[k] = data.getInt8(offset + 12 + (k * 4), true);
+                poly.texX[k] = data.getInt8(offset + 13 + (k * 4), true);
+                poly.unkY[k] = data.getInt8(offset + 14 + (k * 4), true);
+                poly.texY[k] = data.getInt8(offset + 15 + (k * 4), true);
+                */
+                auto unkX = reader.readInt8();
+                auto texX = reader.readInt8();
+                auto unkY = reader.readInt8();
+                auto texY = reader.readInt8();
+            }
+            // for blocksize 32 with quad texture
+            if (numVertex == 4) {
+                // poly.tex = data.getUint8(offset + 28, true);
+                auto tex = reader.readUint8();
+            }
+    }
+
+    while ((reader.pos() - currentPos) < blockSize)
+        reader.skip(1);
+
+    Q_ASSERT((reader.pos() - currentPos) == blockSize);
+    return p;
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::validate()
+{
+    for (int i=0; i<mPolygones.count(); i++) {
+        for (int vi=0; vi<mPolygones[i].vertices.count(); vi++) {
+            if (mPolygones[i].vertices[vi] >= mVertices.count()) {
+                mPolygones.removeAt(i);
+                qDebug() << "REMOVED" << i;
+                i--;
+            }
+        }
     }
 }
 

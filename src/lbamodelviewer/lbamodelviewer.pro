@@ -7,6 +7,7 @@ TARGET      = lbamodelviewer
 INCLUDEPATH += .
 QT          += core widgets
 CONFIG      += debug
+QMAKE_CXXFLAGS += -std=c++11
 
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)

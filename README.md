@@ -1,12 +1,12 @@
 
 LBA World
 ===========
-C++/Qt-based Toolchain for LBA1 (Little Big Adventure, Adeline Software, 1994) 
+C++/Qt-based Toolchain for LBA1 + LBA2 (Little Big Adventure, Adeline Software, 1994) 
 
 Features
 ---------
 1) Utility "flaplayer": Viewer for LBA1 cinematics (*.FLA)
-2) Utility "lbaspriteviewer": LBA1 2D-Sprite viewer (SPRITES.HQR)
+2) Utility "lbaspriteviewer": LBA1/LBA2 2D-Sprite viewer (SPRITES.HQR + SPRITRAW.HQR)
 3) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
 
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/flaplayer.png)
@@ -32,7 +32,7 @@ see also:
 * https://developer.valvesoftware.com/wiki/SteamCMD#Linux
 * https://steamdb.info/search/?a=app&q=lba
 
-3) Dependencies, Download, Build + Run (on Ubuntu)
+3) Dependencies, Download, Build + Run (Ubuntu 16.04)
 ```bash
 $ sudo apt install libsdl-mixer1.2-dev
 $ sudo apt install qt5-default qt5-qmake libqt5opengl5-dev
@@ -43,6 +43,7 @@ $ ./flaplayer --lba1base=<dir-to-lba1-data>
 
 e.g.
 $ ./flaplayer --lba1base=/home/<yourname>/.steam/steamcmd/lba1steam/resources/LBA_FILES
+$ ./lbaspriteviewer --lba1base=/home/<yourname>/.steam/steamcmd/lba1steam/ --lba2base=/home/<yourname>/.steam/steamcmd/lba2steam/
 ```
 
 Milestones
@@ -50,6 +51,10 @@ Milestones
 
 - [x] HQR-Reader (a very basic milestone :))
 - [x] FLA-Player inluding sound (*.FLA: LBA cinematic clips)
+- [x] LBA1 Model Viewer including animation keyframes
+- [x] LBA1 Sprites
+- [x] LBA2 (Raw)-Sprites
+- [] WIP: LBA2 3d-Models
 - [ ] Understanding Body -> Animation -> Actor -> Character -> Scene -> Scripts , ...
 - [ ] Proper 3D-Layers (SceneGraph)
 - [ ] ...

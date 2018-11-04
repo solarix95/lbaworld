@@ -12,7 +12,11 @@ LbaSpritePlayer::LbaSpritePlayer(const LbaRess &ress, QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->spbIndex, SIGNAL(valueChanged(int)), this, SLOT(showSprite()));
-
+    connect(ui->btnLba1, SIGNAL(clicked(bool)), this, SLOT(showSprite()));
+    connect(ui->btnLba2, SIGNAL(clicked(bool)), this, SLOT(showSprite()));
+    connect(ui->btnLbaw, SIGNAL(clicked(bool)), this, SLOT(showSprite()));
+    connect(ui->btnSprites, SIGNAL(clicked(bool)), this, SLOT(showSprite()));
+    connect(ui->btnSpritesRaw, SIGNAL(clicked(bool)), this, SLOT(showSprite()));
     showSprite();
 }
 
@@ -26,11 +30,16 @@ LbaSpritePlayer::~LbaSpritePlayer()
 void LbaSpritePlayer::showSprite()
 {
     int index = ui->spbIndex->value();
-    if (index < 0 || index >= mLbaRess.count(LbaRess::LBA1,LbaRess::Sprites))
-        return;
-    LbaPalette pal(mLbaRess.data(LbaRess::LBA1,LbaRess::Ress,0));
+    LbaRess::Source source   = ui->btnLba1->isChecked() ? LbaRess::LBA1 : LbaRess::LBA2;
+    LbaRess::Content content = ui->btnSprites->isChecked() ? LbaRess::Sprites : LbaRess::SpritesRaw;
 
-    LbaSprite sprite(pal,mLbaRess.data(LbaRess::LBA1,LbaRess::Sprites,index));
+    ui->lblCount->setText(QString("%1").arg(mLbaRess.count(source,content)));
+
+    if (index < 0 || index >= mLbaRess.count(source,content))
+        return;
+    LbaPalette pal(mLbaRess.data(source,LbaRess::Ress,0));
+
+    LbaSprite sprite(pal,mLbaRess.data(source,content,index), content == LbaRess::SpritesRaw);
 
     QImage img = sprite.image();
 
