@@ -75,11 +75,11 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
 
     qDebug() << "LbaBody::fromLba2Buffer" << bonesSize  << verticesSize << normalsSize << polygonsSize << linesSize << spheresSize;
 
-    reader.seek(verticesOffset);
-    loadLba2Vertices(reader,verticesSize);
-
     reader.seek(bonesOffset);
     loadLba2Bones(reader,bonesSize);
+
+    reader.seek(verticesOffset);
+    loadLba2Vertices(reader,verticesSize);
 
     reader.seek(normalsOffset);
     loadLba2Normals(reader,normalsSize);
@@ -89,6 +89,12 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
 
     reader.seek(spheresOffset);
     loadLba2Spheres(reader,spheresSize);
+
+    reader.seek(linesOffset);
+    loadLba2Lines(reader,linesSize);
+
+    reader.seek(uvGroupsOffset);
+    loadLba2UvGroups(reader,uvGroupsSize);
 
     return true;
 }
@@ -526,6 +532,8 @@ void LbaBody::loadLba2Vertices(BinaryReader &reader, quint32 count)
         const auto z = reader.readInt16();
         const auto boneIndex = reader.readUint16();
         qDebug() << "LBA2 VERTEX" << x << y << z << boneIndex;
+        Q_ASSERT(boneIndex >= 0);
+        Q_ASSERT(boneIndex < mBones.count());
         mVertices << Vertex(x,y,z,boneIndex);
         count--;
     }
@@ -546,9 +554,8 @@ void LbaBody::loadLba2Bones(BinaryReader &reader, quint32 count)
         const auto vertex = reader.readInt16();
         const auto unk1   = reader.readInt16();
         const auto unk2   = reader.readInt16();
-        qDebug() << "LBA2 BONE" << parent << vertex;
+        qDebug() << "LBA2 BONE" << i << parent << vertex;
         mBones << Bone(i,parent,0,vertex);
-        count--;
     }
 }
 
@@ -612,6 +619,7 @@ void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count)
         for (auto j = 0; j < numPolygons; j += 1) {
             const auto p = loadLba2Polygon(reader, renderType, blockSize);
             mPolygones << p;
+            qDebug() << "Polygon" << j << p.lbaColorIndex;
         }
 
         Q_ASSERT((reader.pos() - currentPos) == sectionSize);
@@ -653,6 +661,13 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
     auto color = reader.readUint16();
     color = (color & 0x00FF) / 16;
     p.lbaColorIndex = color;
+
+    for (int i=0; i<p.normals.count(); i++) {
+        int newIndex = updateNormal(p.normals[i], p.lbaColorIndex);
+        if (p.normals[i] != newIndex)
+            p.normals[i] = newIndex;
+    }
+
 
     // polygon color intensity
     const auto intensity = reader.readInt16();
@@ -722,6 +737,20 @@ void LbaBody::loadLba2Lines(BinaryReader &reader, quint32 count)
         const auto vertex2 = reader.readUint16();
         qDebug() << "LBA2 Line" << vertex1 << vertex2 << color;
         mLines << Line(vertex1,vertex2);
+        count--;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::loadLba2UvGroups(BinaryReader &reader, quint32 count)
+{
+    while (count > 0) {
+        const auto x   = reader.readUint8();
+        const auto y   = reader.readUint8();
+        const auto w   = reader.readUint8();
+        const auto h   = reader.readUint8();
+        qDebug() << "LBA2 UvGroup" << x << y << w << h;
+        mUvGroups << UvGroup(x,y,w,h);
         count--;
     }
 }

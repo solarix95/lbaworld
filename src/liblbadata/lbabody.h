@@ -77,6 +77,16 @@ public:
     };
     typedef QList<Sphere>    Spheres;
 
+    struct UvGroup {
+        int        x;
+        int        y;
+        int        width;
+        int        height;
+
+        UvGroup(int ax = -1, int ay = -1, int aw = -1, int ah = -1) : x(ax), y(ay), width(aw), height(ah) {}
+    };
+    typedef QList<UvGroup>    UvGroups;
+
     //-----------------------------------------------------------------------------------------
     LbaBody();
     virtual ~LbaBody();
@@ -118,6 +128,7 @@ private:
     Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize);
     void loadLba2Spheres(BinaryReader &reader, quint32 count);
     void loadLba2Lines(BinaryReader &reader, quint32 count);
+    void loadLba2UvGroups(BinaryReader &reader, quint32 count);
 
     void validate();
 
@@ -131,7 +142,7 @@ private:
     Bones     mBones;
     Lines     mLines;
     Spheres   mSpheres;
-
+    UvGroups  mUvGroups;
 };
 
 #endif // LBABODY_H
