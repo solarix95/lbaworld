@@ -6,6 +6,8 @@
 #include <QVector3D>
 #include <QColor>
 
+#include <lbapalette.h>
+
 class LbaAnimation;
 class BinaryReader;
 class LbaBody
@@ -25,13 +27,12 @@ public:
 
     struct Normal {
         float dx,dy,dz;
-        int   colorIndex;
+        QRgb  color;
 
-        Normal(float x, float y, float z, int c = -1) : dx(x), dy(y), dz(z), colorIndex(c) {}
-        Normal(const Normal &o) : dx(o.dx), dy(o.dy), dz(o.dz), colorIndex(o.colorIndex)  {}
+        Normal(float x, float y, float z, QRgb c = 0) : dx(x), dy(y), dz(z), color(c) {}
+        Normal(const Normal &o) : dx(o.dx), dy(o.dy), dz(o.dz), color(o.color)  {}
     };
     typedef QList<Normal>      Normals;
-
 
     struct Line {
         int p0;
@@ -48,8 +49,8 @@ public:
     struct Polygon {
         QList<int> vertices;
         QList<int> normals;
-        int        lbaColorIndex;
-        Polygon() : lbaColorIndex(-1) {}
+        QRgb       color;
+        Polygon() : color(0) {}
     };
     typedef QList<Polygon> Polygons;
 
@@ -92,8 +93,8 @@ public:
     LbaBody();
     virtual ~LbaBody();
 
-    bool fromLba1Buffer(const QByteArray &buffer);
-    bool fromLba2Buffer(const QByteArray &buffer);
+    bool fromLba1Buffer(const QByteArray &buffer, const LbaPalette &pal);
+    bool fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal);
     bool animationFromBuffer(const QByteArray &buffer);
     void setAnimation(LbaAnimation *ani);
 
@@ -117,16 +118,16 @@ private:
     void loadLba1Points(BinaryReader &reader);
     void loadLba1Bones(BinaryReader &reader);
     void loadLba1Normals(BinaryReader &reader);
-    void loadLba1Polygones(BinaryReader &reader);
+    void loadLba1Polygones(BinaryReader &reader, const LbaPalette &pal);
     void loadLba1Lines(BinaryReader &reader);
     void loadLba1Spheres(BinaryReader &reader);
-    int  updateNormal(int normalIndex, int colorIndex);
+    int  updateNormal(int normalIndex, QRgb color);
 
     void loadLba2Vertices(BinaryReader &reader, quint32 count);
     void loadLba2Bones(BinaryReader &reader, quint32 count);
     void loadLba2Normals(BinaryReader &reader, quint32 count);
-    void loadLba2Polygones(BinaryReader &reader, quint32 count);
-    Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize);
+    void loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal);
+    Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal);
     void loadLba2Spheres(BinaryReader &reader, quint32 count);
     void loadLba2Lines(BinaryReader &reader, quint32 count);
     void loadLba2UvGroups(BinaryReader &reader, quint32 count);

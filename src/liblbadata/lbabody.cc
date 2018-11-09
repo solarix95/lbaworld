@@ -21,7 +21,7 @@ LbaBody::~LbaBody()
 }
 
 //-------------------------------------------------------------------------------------------
-bool LbaBody::fromLba1Buffer(const QByteArray &buffer)
+bool LbaBody::fromLba1Buffer(const QByteArray &buffer, const LbaPalette &pal)
 {
     BinaryReader reader(buffer);
 
@@ -33,7 +33,7 @@ bool LbaBody::fromLba1Buffer(const QByteArray &buffer)
     loadLba1Points(reader);
     loadLba1Bones(reader);
     loadLba1Normals(reader);
-    loadLba1Polygones(reader);
+    loadLba1Polygones(reader,pal);
     loadLba1Lines(reader);
     loadLba1Spheres(reader);
 
@@ -42,7 +42,7 @@ bool LbaBody::fromLba1Buffer(const QByteArray &buffer)
 }
 
 //-------------------------------------------------------------------------------------------
-bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
+bool LbaBody::fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal)
 {
     BinaryReader reader(buffer);
 
@@ -85,7 +85,7 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer)
     loadLba2Normals(reader,normalsSize);
 
     reader.seek(polygonsOffset);
-    loadLba2Polygones(reader,linesOffset - polygonsOffset);
+    loadLba2Polygones(reader,linesOffset - polygonsOffset, pal);
 
     reader.seek(spheresOffset);
     loadLba2Spheres(reader,spheresSize);
@@ -393,7 +393,7 @@ void LbaBody::loadLba1Normals(BinaryReader &reader)
 }
 
 //-----------------------------------------------------------------------------------------
-void LbaBody::loadLba1Polygones(BinaryReader &reader)
+void LbaBody::loadLba1Polygones(BinaryReader &reader, const LbaPalette &pal)
 {
     quint16 polygonCount;
     mPolygones.clear();
@@ -407,7 +407,7 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
         reader.skip(1); // Unknown
         qDebug() << "Polygon" << i << renderType << nrVertices << colorIndex;
         Polygon p;
-        p.lbaColorIndex = colorIndex;
+        p.color = pal.palette()[colorIndex];
         if (renderType >= 9) {             // each vertex has a normal
             for (int j=0; j<nrVertices; j++) {
                 quint16 normal, vertex;
@@ -416,7 +416,7 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
                 vertex /= 6;
                 // qDebug() << "  Vertex" << vertex << normal;
                 p.vertices << vertex;
-                p.normals  << updateNormal(normal,colorIndex);;
+                p.normals  << updateNormal(normal,p.color);;
 
                 // polygon_vertices.append((v, normal))
             }
@@ -428,7 +428,7 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader)
                 vertex /= 6;
                 // qDebug() << "  Vertex" << vertex << normal;
                 p.vertices << vertex;
-                p.normals  << updateNormal(normal,colorIndex);;
+                p.normals  << updateNormal(normal,p.color);;
 
                 // polygon_vertices.append((v, normal))
             }
@@ -494,7 +494,7 @@ void LbaBody::loadLba1Spheres(BinaryReader &reader)
 }
 
 //-----------------------------------------------------------------------------------------
-int LbaBody::updateNormal(int normalIndex, int colorIndex)
+int LbaBody::updateNormal(int normalIndex, QRgb color)
 /*
   LBA1: Color by Polygon.
   LBA2: Color by Normal.
@@ -504,15 +504,13 @@ int LbaBody::updateNormal(int normalIndex, int colorIndex)
 */
 {
     Q_ASSERT(normalIndex >= 0 && normalIndex < mNormals.count());
-    Q_ASSERT(colorIndex >= 0 && colorIndex <= 255);
 
-    if (mNormals[normalIndex].colorIndex >= 0 && mNormals[normalIndex].colorIndex != colorIndex) {
-        qWarning() << "Cannot update color of normal" << normalIndex << mNormals[normalIndex].colorIndex << colorIndex;
+    if (mNormals[normalIndex].color != color) {
+        qWarning() << "Cannot update color of normal" << normalIndex << mNormals[normalIndex].color << color;
         mNormals << mNormals[normalIndex];
-        mNormals.last().colorIndex = colorIndex;
+        mNormals.last().color = color;
         return mNormals.count() - 1;
     }
-    mNormals[normalIndex].colorIndex = colorIndex;
     return normalIndex;
 }
 
@@ -581,7 +579,7 @@ void LbaBody::loadLba2Normals(BinaryReader &reader, quint32 count)
 }
 
 //-----------------------------------------------------------------------------------------
-void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count)
+void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal)
 {
     /*
          const renderType = data.getUint16(offset, true);
@@ -617,9 +615,8 @@ void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count)
 
         const auto blockSize = ((sectionSize - 8) / numPolygons);
         for (auto j = 0; j < numPolygons; j += 1) {
-            const auto p = loadLba2Polygon(reader, renderType, blockSize);
+            const auto p = loadLba2Polygon(reader, renderType, blockSize, pal);
             mPolygones << p;
-            qDebug() << "Polygon" << j << p.lbaColorIndex;
         }
 
         Q_ASSERT((reader.pos() - currentPos) == sectionSize);
@@ -629,7 +626,7 @@ void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count)
 }
 
 //-----------------------------------------------------------------------------------------
-LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize)
+LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal)
 {
     const auto currentPos      = reader.pos();
     const auto numVertex       = (renderType & 0x8000) ? 4 : 3;
@@ -662,10 +659,11 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
 
     auto color = reader.readUint16();
     color = (color & 0x00FF) / 16;
-    p.lbaColorIndex = color;
+    // p.lbaColorIndex = color;
+    p.color = pal.palette()[color];
 
     for (int i=0; i<p.normals.count(); i++) {
-        int newIndex = updateNormal(p.normals[i], p.lbaColorIndex);
+        int newIndex = updateNormal(p.normals[i], p.color);
         if (p.normals[i] != newIndex)
             p.normals[i] = newIndex;
     }

@@ -46,7 +46,7 @@ void normalize(LbwVector &v)
     }
 }
 
-inline void initVertex(LbwVertex &v, int vi, const QVector<QRgb> &colorTable , const LbaBody::Vertices &points, const LbaBody::Normals  &normals, const LbaBody::Polygon &polygon)
+inline void initVertex(LbwVertex &v, int vi, const LbaBody::Vertices &points, const LbaBody::Normals  &normals, const LbaBody::Polygon &polygon)
 {
     float f = 800;
     v.p.x = points[polygon.vertices[vi]].x/f;
@@ -58,14 +58,14 @@ inline void initVertex(LbwVertex &v, int vi, const QVector<QRgb> &colorTable , c
     v.n.z = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].dz : 0;
     normalize(v.n);                   \
     {
-       int colorIndex = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].colorIndex : polygon.lbaColorIndex;
-       v.c.x = qRed(  colorTable[colorIndex])/255.0;
-       v.c.y = qGreen(colorTable[colorIndex])/255.0;
-       v.c.z = qBlue( colorTable[colorIndex])/255.0;
+       QRgb color = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].color : polygon.color;
+       v.c.x = qRed(  color)/255.0;
+       v.c.y = qGreen(color)/255.0;
+       v.c.z = qBlue( color)/255.0;
     }
 }
 
-#define INITV(V) initVertex(v[vindex],V,colorTable,points,normals,polygons[i]);
+#define INITV(V) initVertex(v[vindex],V,points,normals,polygons[i]);
 
 //-------------------------------------------------------------------------------------------------
 Lbw3dWidget::Lbw3dWidget(QWidget *parent)
@@ -346,9 +346,9 @@ LbwVertex *Lbw3dWidget::verticesFromBody(const LbaBody &body, const LbaPalette &
                 v[vindex].n.y = cn.y();
                 v[vindex].n.z = cn.z();
                 normalize(v[vindex].n);
-                v[vindex].c.x = 3*qRed(  colorTable[polygons[i].lbaColorIndex])/255.0;
-                v[vindex].c.y = 3*qGreen(colorTable[polygons[i].lbaColorIndex])/255.0;
-                v[vindex].c.z = 3*qBlue( colorTable[polygons[i].lbaColorIndex])/255.0;
+                v[vindex].c.x = 3*qRed(  polygons[i].color)/255.0;
+                v[vindex].c.y = 3*qGreen(polygons[i].color)/255.0;
+                v[vindex].c.z = 3*qBlue( polygons[i].color)/255.0;
 
                 vindex++;
             }
@@ -375,10 +375,7 @@ LbwVertex *Lbw3dWidget::linesFromBody(const LbaBody &body, const LbaPalette &pal
 
     for (int i=0; i<lines.count(); i++) {
         float f = 800;
-        QRgb colorP0 = QColor(Qt::black).rgb();
-        int colorIndex = body.polygonByPoint(lines[i].p0).lbaColorIndex;
-        if (colorIndex >= 0)
-            colorP0 = colorTable[colorIndex];
+        QRgb colorP0 = body.polygonByPoint(lines[i].p0).color;
 
         v[vindex].p.x = points[lines[i].p0].x/f;
         v[vindex].p.y = points[lines[i].p0].y/f;
@@ -396,10 +393,7 @@ LbwVertex *Lbw3dWidget::linesFromBody(const LbaBody &body, const LbaPalette &pal
         v[vindex].c.z = qBlue(colorP0)/255.0;
         vindex++;
 
-        QRgb colorP1 = QColor(Qt::black).rgb();
-        colorIndex = body.polygonByPoint(lines[i].p1).lbaColorIndex;
-        if (colorIndex >= 0)
-            colorP1 = colorTable[colorIndex];
+        QRgb colorP1 = body.polygonByPoint(lines[i].p1).color;
 
         v[vindex].p.x = points[lines[i].p1].x/f;
         v[vindex].p.y = points[lines[i].p1].y/f;

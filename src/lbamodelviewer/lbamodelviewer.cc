@@ -40,11 +40,12 @@ void LbaModelViewer::loadModel()
     if (modelData.isEmpty())
         return;
 
+    LbaPalette pal(mRess.data(source,LbaRess::Ress,0));
     LbaBody body;
     if (source == LbaRess::LBA1)
-        body.fromLba1Buffer(modelData);
+        body.fromLba1Buffer(modelData, pal);
     else
-        body.fromLba2Buffer(modelData);
+        body.fromLba2Buffer(modelData, pal);
 
     LbaAnimation *ani = NULL;
     int keyFrame = -1;
@@ -53,7 +54,7 @@ void LbaModelViewer::loadModel()
         ani->fromBuffer(mRess.data(source,LbaRess::Anim,mUi.spbAniIndex->value()));
         keyFrame = qMin(mUi.spbAniFrame->value(), ani->keyFrameCount()-1);
     }
-    LbaPalette pal(mRess.data(source,LbaRess::Ress,0));
+
 
     int flags = 0;
 
