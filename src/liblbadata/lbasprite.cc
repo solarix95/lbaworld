@@ -4,18 +4,57 @@
 #include "binaryreader.h"
 
 //-------------------------------------------------------------------------------------------
-LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer, bool raw)
+LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer, LbaSprite::Type spriteType )
     : mPalette(pal)
 {
-    if (raw)
-        fromRawBuffer(buffer);
-    else
-        fromBuffer(buffer);
+    if (buffer.isEmpty())
+        return;
+
+    switch(spriteType) {
+    case Sprite:
+        fromSpriteBuffer(buffer); break;
+    case RawSprite:
+        fromRawSpriteBuffer(buffer); break;
+    case Image:
+        fromImageBuffer(buffer); break;
+    }
 }
 
 //-------------------------------------------------------------------------------------------
-bool LbaSprite::fromBuffer(const QByteArray &buffer)
+bool LbaSprite::fromImageBuffer(const QByteArray &buffer)
 {
+
+    mImage = QImage();
+
+    int width;
+    int height;
+    if (buffer.length() == (640*480)) {
+        width  = 640;
+        height = 480;
+    } else {
+        width = height = sqrt(buffer.length());
+    }
+
+    if (buffer.length() != (width*height))
+        return false;
+
+    quint8 *src = (quint8*)buffer.constData();
+    mImage = QImage(QSize(width,height), QImage::Format_Indexed8);
+    mImage.setColorTable(mPalette.palette());
+    for (int y=0; y<height; y++) {
+        quint8 *line = mImage.scanLine(y);
+        for (int x=0; x<width; x++) {
+            line[x] = src[y*width + x];
+        }
+    }
+
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaSprite::fromSpriteBuffer(const QByteArray &buffer)
+{
+    mImage = QImage();
     BinaryReader reader(buffer);
 
     quint32 offsetSprite0;
@@ -40,7 +79,8 @@ bool LbaSprite::fromBuffer(const QByteArray &buffer)
     qint32 x = 0;
     qint32 y = 0;
 
-    Q_ASSERT(width * height > 0);
+    if (width * height <= 0)
+        return false;
 
     QImage image(width, height, QImage::Format_ARGB32);
     image.fill(Qt::transparent);
@@ -73,12 +113,13 @@ bool LbaSprite::fromBuffer(const QByteArray &buffer)
         y++;
     }
 
-    mImage = image;
+    if (!reader.error())
+        mImage = image;
     return true;
 }
 
 //-------------------------------------------------------------------------------------------
-bool LbaSprite::fromRawBuffer(const QByteArray &buffer)
+bool LbaSprite::fromRawSpriteBuffer(const QByteArray &buffer)
 {
     // https://github.com/agrande/lba2remake/blob/master/src/iso/sprites.js
 
@@ -114,7 +155,8 @@ bool LbaSprite::fromRawBuffer(const QByteArray &buffer)
         }
     }
 
-    mImage = image;
+    if (!reader.error())
+        mImage = image;
 
     return true;
 }

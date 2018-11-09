@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QImage>
+#include <lbapalette.h>
 
 class LbaImage
 {

@@ -8,10 +8,17 @@
 class LbaSprite
 {
 public:
-    LbaSprite(const LbaPalette &pal, const QByteArray &buffer = QByteArray(), bool raw = false);
+    enum Type {
+        Sprite,
+        RawSprite,
+        Image
+    };
 
-    bool fromBuffer(const QByteArray &buffer);
-    bool fromRawBuffer(const QByteArray &buffer);
+    LbaSprite(const LbaPalette &pal, const QByteArray &buffer = QByteArray(), Type spriteType = Sprite);
+
+    bool fromSpriteBuffer(const QByteArray &buffer);
+    bool fromRawSpriteBuffer(const QByteArray &buffer);
+    bool fromImageBuffer(const QByteArray &buffer);
 
     const QImage &image() const;
 

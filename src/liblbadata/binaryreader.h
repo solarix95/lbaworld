@@ -13,6 +13,7 @@ public:
     int  pos()  const;
     int  size() const;
     bool atEnd() const;
+    bool error() const;
 
     bool read(void* destPtr, int size);
 
@@ -34,6 +35,7 @@ private:
 
     QByteArray    mBuffer;
     const quint8 *mCursor;
+    bool          mError;
 };
 
 #endif // BINARYREADER_H

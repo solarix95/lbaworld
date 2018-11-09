@@ -16,7 +16,7 @@
 static inline void MatrixAsUniform(QOpenGLFunctions *f, GLuint location, QMatrix4x4 m) { f->glUniformMatrix4fv(location,1,GL_TRUE,m.data()); }
 #define PI 3.1415f
 
-#define INITV(V) \
+#define INITVX(V) \
     v[vindex].p.x = points[polygons[i].vertices[V]].x/f; \
     v[vindex].p.y = points[polygons[i].vertices[V]].y/f; \
     v[vindex].p.z = points[polygons[i].vertices[V]].z/f; \
@@ -45,6 +45,27 @@ void normalize(LbwVector &v)
         v.z /= sum;
     }
 }
+
+inline void initVertex(LbwVertex &v, int vi, const QVector<QRgb> &colorTable , const LbaBody::Vertices &points, const LbaBody::Normals  &normals, const LbaBody::Polygon &polygon)
+{
+    float f = 800;
+    v.p.x = points[polygon.vertices[vi]].x/f;
+    v.p.y = points[polygon.vertices[vi]].y/f; \
+    v.p.z = points[polygon.vertices[vi]].z/f; \
+    v.w   = 1.0;                                   \
+    v.n.x = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].dx : 0;
+    v.n.y = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].dy : 0;
+    v.n.z = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].dz : 0;
+    normalize(v.n);                   \
+    {
+       int colorIndex = polygon.normals.count() > 0 ? normals[polygon.normals[vi]].colorIndex : polygon.lbaColorIndex;
+       v.c.x = qRed(  colorTable[colorIndex])/255.0;
+       v.c.y = qGreen(colorTable[colorIndex])/255.0;
+       v.c.z = qBlue( colorTable[colorIndex])/255.0;
+    }
+}
+
+#define INITV(V) initVertex(v[vindex],V,colorTable,points,normals,polygons[i]);
 
 //-------------------------------------------------------------------------------------------------
 Lbw3dWidget::Lbw3dWidget(QWidget *parent)

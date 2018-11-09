@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QList>
 #include <QVector3D>
+#include <QColor>
 
 class LbaAnimation;
 class BinaryReader;

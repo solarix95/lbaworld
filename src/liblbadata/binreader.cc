@@ -1,8 +1,10 @@
 #include "binaryreader.h"
 
+#define ERROR(c) if (!c) { mError = true; return 0; }
+
 //-------------------------------------------------------------------------------------------
 BinaryReader::BinaryReader(const QByteArray &buffer)
- : mCursor(NULL)
+ : mCursor(NULL), mError(false)
 {
     if (!buffer.isEmpty())
         setBuffer(buffer);
@@ -43,6 +45,12 @@ bool BinaryReader::atEnd() const
 }
 
 //-------------------------------------------------------------------------------------------
+bool BinaryReader::error() const
+{
+    return mError;
+}
+
+//-------------------------------------------------------------------------------------------
 bool BinaryReader::read(void *destPtr, int size)
 {
     if ((mCursor + size) > tail())
@@ -57,7 +65,7 @@ qint8 BinaryReader::readInt8()
 {
     qint8 ret;
     bool done = read(&ret,1);
-    Q_ASSERT(done);
+    ERROR(done);
     return ret;
 }
 
@@ -66,7 +74,7 @@ quint8 BinaryReader::readUint8()
 {
     quint8 ret;
     bool done = read(&ret,1);
-    Q_ASSERT(done);
+    ERROR(done);
     return ret;
 }
 
@@ -75,7 +83,7 @@ qint16 BinaryReader::readInt16()
 {
     qint16 ret;
     bool done = read(&ret,2);
-    Q_ASSERT(done);
+    ERROR(done);
     return ret;
 }
 
@@ -84,7 +92,7 @@ quint16 BinaryReader::readUint16()
 {
     quint16 ret;
     bool done = read(&ret,2);
-    Q_ASSERT(done);
+    ERROR(done);
     return ret;
 }
 
