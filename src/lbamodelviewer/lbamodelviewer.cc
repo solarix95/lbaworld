@@ -1,5 +1,6 @@
 #include "lbamodelviewer.h"
 #include <lbabody.h>
+#include <lbasprite.h>
 
 //-------------------------------------------------------------------------------------------------
 LbaModelViewer::LbaModelViewer(const LbaRess &ress)
@@ -44,8 +45,10 @@ void LbaModelViewer::loadModel()
     LbaBody body;
     if (source == LbaRess::LBA1)
         body.fromLba1Buffer(modelData, pal);
-    else
-        body.fromLba2Buffer(modelData, pal);
+    else {
+        LbaSprite uvTexture(pal,mRess.data(source,LbaRess::Ress,6),LbaSprite::Image);
+        body.fromLba2Buffer(modelData, pal, uvTexture.image());
+    }
 
     LbaAnimation *ani = NULL;
     int keyFrame = -1;

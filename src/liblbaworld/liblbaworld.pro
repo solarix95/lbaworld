@@ -11,7 +11,9 @@ HEADERS += \
     ../liblbaworld/lbwsdlaudio.h \
     ../liblbaworld/lbw3dwidget.h \
     ../liblbaworld/lbw3dsphere.h \
-    ../liblbaworld/lbw3d.h
+    ../liblbaworld/lbw3d.h \
+    ../liblbaworld/lbwgeometrybuffer.h \
+    ../liblbaworld/lbwshader.h
 
 SOURCES += \
     ../liblbaworld/lbwaudio.cc \
@@ -19,6 +21,8 @@ SOURCES += \
     ../liblbaworld/lbwsfmlaudio.cc \
     ../liblbaworld/lbw3dwidget.cc \
     ../liblbaworld/lbw3dsphere.cc \
-    ../liblbaworld/lbw3d.cc
+    ../liblbaworld/lbw3d.cc \
+    ../liblbaworld/lbwgeometrybuffer.cc \
+    ../liblbaworld/lbwshader.cc
 
 LIBS += -lsfml-audio -lSDL -lSDL_mixer

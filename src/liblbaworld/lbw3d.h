@@ -18,5 +18,13 @@ struct LbwVertex {
     LbwVector c;   // Color (x -> red, y -> green, z -> blue)
 };
 
+//-------------------------------------------------------------------------------------------------
+enum LbwShapeType {
+    PolygonMesh,
+    Sphere,
+    Line,
+    Bone
+};
+
 #endif // LBW3D
 

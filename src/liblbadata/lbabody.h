@@ -94,7 +94,7 @@ public:
     virtual ~LbaBody();
 
     bool fromLba1Buffer(const QByteArray &buffer, const LbaPalette &pal);
-    bool fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal);
+    bool fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal, const QImage &uvTexture);
     bool animationFromBuffer(const QByteArray &buffer);
     void setAnimation(LbaAnimation *ani);
 
@@ -121,17 +121,18 @@ private:
     void loadLba1Polygones(BinaryReader &reader, const LbaPalette &pal);
     void loadLba1Lines(BinaryReader &reader);
     void loadLba1Spheres(BinaryReader &reader);
-    int  updateNormal(int normalIndex, QRgb color);
+
 
     void loadLba2Vertices(BinaryReader &reader, quint32 count);
     void loadLba2Bones(BinaryReader &reader, quint32 count);
     void loadLba2Normals(BinaryReader &reader, quint32 count);
-    void loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal);
-    Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal);
+    void loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal, const QImage &uvTexture);
+    Polygon loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal, const QImage &uvTexture);
     void loadLba2Spheres(BinaryReader &reader, quint32 count);
     void loadLba2Lines(BinaryReader &reader, quint32 count);
     void loadLba2UvGroups(BinaryReader &reader, quint32 count);
 
+    int  updateNormal(int normalIndex, QRgb color);
     void validate();
 
     LbaAnimation *mAnimation;

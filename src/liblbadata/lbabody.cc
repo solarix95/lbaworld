@@ -2,6 +2,7 @@
 #include <QVector3D>
 #include <QMatrix4x4>
 #include <QVector4D>
+#include <QImage>
 #include "lbabody.h"
 #include "binaryreader.h"
 #include "lbaanimation.h"
@@ -42,7 +43,7 @@ bool LbaBody::fromLba1Buffer(const QByteArray &buffer, const LbaPalette &pal)
 }
 
 //-------------------------------------------------------------------------------------------
-bool LbaBody::fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal)
+bool LbaBody::fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal, const QImage &uvTexture)
 {
     BinaryReader reader(buffer);
 
@@ -84,17 +85,17 @@ bool LbaBody::fromLba2Buffer(const QByteArray &buffer, const LbaPalette &pal)
     reader.seek(normalsOffset);
     loadLba2Normals(reader,normalsSize);
 
+    reader.seek(uvGroupsOffset);
+    loadLba2UvGroups(reader,uvGroupsSize);
+
     reader.seek(polygonsOffset);
-    loadLba2Polygones(reader,linesOffset - polygonsOffset, pal);
+    loadLba2Polygones(reader,linesOffset - polygonsOffset, pal, uvTexture);
 
     reader.seek(spheresOffset);
     loadLba2Spheres(reader,spheresSize);
 
     reader.seek(linesOffset);
     loadLba2Lines(reader,linesSize);
-
-    reader.seek(uvGroupsOffset);
-    loadLba2UvGroups(reader,uvGroupsSize);
 
     return true;
 }
@@ -579,7 +580,7 @@ void LbaBody::loadLba2Normals(BinaryReader &reader, quint32 count)
 }
 
 //-----------------------------------------------------------------------------------------
-void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal)
+void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPalette &pal, const QImage &uvTexture)
 {
     /*
          const renderType = data.getUint16(offset, true);
@@ -615,7 +616,7 @@ void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPa
 
         const auto blockSize = ((sectionSize - 8) / numPolygons);
         for (auto j = 0; j < numPolygons; j += 1) {
-            const auto p = loadLba2Polygon(reader, renderType, blockSize, pal);
+            const auto p = loadLba2Polygon(reader, renderType, blockSize, pal, uvTexture);
             mPolygones << p;
         }
 
@@ -626,7 +627,7 @@ void LbaBody::loadLba2Polygones(BinaryReader &reader, quint32 count, const LbaPa
 }
 
 //-----------------------------------------------------------------------------------------
-LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal)
+LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderType, quint16 blockSize, const LbaPalette &pal, const QImage &uvTexture)
 {
     const auto currentPos      = reader.pos();
     const auto numVertex       = (renderType & 0x8000) ? 4 : 3;
@@ -650,8 +651,9 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
     }
 
     // special case for trianguled textures
+    int textureId = -1;
     if (hasTex && numVertex == 3) {
-        const auto tex = reader.readUint8();
+        textureId = reader.readUint8();
         // qDebug() << "TEXTURE" << tex;
          reader.skip(1);
         // p.tex = tex
@@ -661,13 +663,6 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
     color = (color & 0x00FF) / 16;
     // p.lbaColorIndex = color;
     p.color = pal.palette()[color];
-
-    for (int i=0; i<p.normals.count(); i++) {
-        int newIndex = updateNormal(p.normals[i], p.color);
-        if (p.normals[i] != newIndex)
-            p.normals[i] = newIndex;
-    }
-
 
     // polygon color intensity
     const auto intensity = reader.readInt16();
@@ -685,12 +680,25 @@ LbaBody::Polygon LbaBody::loadLba2Polygon(BinaryReader &reader, quint16 renderTy
             auto texX = reader.readInt8();
             auto unkY = reader.readInt8();
             auto texY = reader.readInt8();
+
+            const auto x = (texX + unkX)/256;
+            const auto y = (texY + unkY)/256;
+            qDebug() << x << y << textureId;
+            if (textureId >= 0 && textureId < mUvGroups.count()) {
+                // p.color = uvTexture.pixel(mUvGroups[textureId].x + x, mUvGroups[textureId].y+y);
+            }
         }
         // for blocksize 32 with quad texture
         if (numVertex == 4) {
             // poly.tex = data.getUint8(offset + 28, true);
             auto tex = reader.readUint8();
         }
+    }
+
+    for (int i=0; i<p.normals.count(); i++) {
+        int newIndex = updateNormal(p.normals[i], p.color);
+        if (p.normals[i] != newIndex)
+            p.normals[i] = newIndex;
     }
 
     while ((reader.pos() - currentPos) < blockSize)
@@ -749,7 +757,7 @@ void LbaBody::loadLba2UvGroups(BinaryReader &reader, quint32 count)
         const auto y   = reader.readUint8();
         const auto w   = reader.readUint8();
         const auto h   = reader.readUint8();
-        // qDebug() << "LBA2 UvGroup" << x << y << w << h;
+        qDebug() << "LBA2 UvGroup" << x << y << w << h;
         mUvGroups << UvGroup(x,y,w,h);
         count--;
     }
