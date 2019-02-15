@@ -19,8 +19,5 @@ SOURCES += main.cc \
 HEADERS += \
     lbamodelviewer.h
 
-RESOURCES += \
-    ressources.qrc
-
 FORMS += \
     viewerform.ui

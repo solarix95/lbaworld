@@ -1,4 +1,5 @@
 #include "lbwgeometrybuffer.h"
+#include <math.h>
 #include <lbabody.h>
 #include <lbaanimation.h>
 #include <lbapalette.h>

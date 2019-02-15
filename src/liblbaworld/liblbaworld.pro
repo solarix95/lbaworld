@@ -13,7 +13,13 @@ HEADERS += \
     ../liblbaworld/lbw3dsphere.h \
     ../liblbaworld/lbw3d.h \
     ../liblbaworld/lbwgeometrybuffer.h \
-    ../liblbaworld/lbwshader.h
+    ../liblbaworld/lbwshader.h \
+    ../liblbaworld/lbwconsole.h \
+    ../liblbaworld/lbwscreen.h \
+    ../liblbaworld/lbw2dlayer.h \
+    ../liblbaworld/layer2d/lbw2dposterlayer.h \
+    ../liblbaworld/layer2d/lbw2dconsolelayer.h \
+    ../liblbaworld/rendering/lbwplasmaeffect.h
 
 SOURCES += \
     ../liblbaworld/lbwaudio.cc \
@@ -23,6 +29,14 @@ SOURCES += \
     ../liblbaworld/lbw3dsphere.cc \
     ../liblbaworld/lbw3d.cc \
     ../liblbaworld/lbwgeometrybuffer.cc \
-    ../liblbaworld/lbwshader.cc
+    ../liblbaworld/lbwshader.cc \
+    ../liblbaworld/lbwconsole.cc \
+    ../liblbaworld/lbwscreen.cc \
+    ../liblbaworld/lbw2dlayer.cc \
+    ../liblbaworld/layer2d/lbw2dposterlayer.cc \
+    ../liblbaworld/layer2d/lbw2dconsolelayer.cc \
+    ../liblbaworld/rendering/lbwplasmaeffect.cc
+
+RESOURCES += ../liblbaworld/resources.qrc
 
 LIBS += -lsfml-audio -lSDL -lSDL_mixer

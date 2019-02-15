@@ -8,11 +8,11 @@ static inline void MatrixAsUniform(QOpenGLFunctions *f, GLuint location, QMatrix
 LbwShader::LbwShader()
 {
     mVertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
-    mVertexShader->compileSourceFile(":/phong.vert");
+    mVertexShader->compileSourceFile(":/shader/phong.vert");
     Q_ASSERT(mVertexShader->isCompiled());
 
     mFragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
-    mFragmentShader->compileSourceFile(":/phong.frag");
+    mFragmentShader->compileSourceFile(":/shader/phong.frag");
     Q_ASSERT(mFragmentShader->isCompiled());
 
 

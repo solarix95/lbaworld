@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <QImage>
+#include <math.h>
 #include "lbasprite.h"
 #include "binaryreader.h"
 

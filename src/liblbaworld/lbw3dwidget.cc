@@ -12,6 +12,8 @@
 #include "lbw3dsphere.h"
 #include "lbw3dwidget.h"
 
+#define NORMSPEED_MS  66
+
 //-------------------------------------------------------------------------------------------------
 Lbw3dWidget::Lbw3dWidget(QWidget *parent)
  : QOpenGLWidget(parent), mShader(NULL)
@@ -21,7 +23,7 @@ Lbw3dWidget::Lbw3dWidget(QWidget *parent)
     mCamDist = 7;
     QTimer *t = new QTimer(this);
     connect(t, SIGNAL(timeout()), this, SLOT(process()));
-    t->start(1000/25.0);
+    t->start(NORMSPEED_MS);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -65,6 +67,15 @@ void Lbw3dWidget::initializeGL()
     f->glCullFace(GL_BACK);
 
      mShader = new LbwShader();
+
+     initWidget();
+}
+
+//-------------------------------------------------------------------------------------------------
+void Lbw3dWidget::paintEvent(QPaintEvent *e)
+{
+    QOpenGLWidget::paintEvent(e);
+    paint2dLayers();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -74,13 +85,28 @@ void Lbw3dWidget::wheelEvent(QWheelEvent *event)
 }
 
 //-------------------------------------------------------------------------------------------------
+void Lbw3dWidget::initWidget()
+{
+}
+
+//-------------------------------------------------------------------------------------------------
 void Lbw3dWidget::process()
+{
+    float speed = mStopWatch.elapsed()/(float)NORMSPEED_MS;
+    mStopWatch.start();
+    if (processState(speed))
+        update();
+}
+
+//-------------------------------------------------------------------------------------------------
+bool Lbw3dWidget::processState(float /*speed*/)
 {
     float newA = mAngle + (mTarget - mAngle)/10;
     if (mAngle != newA) {
         mAngle = newA;
-        update();
+        return true;
     }
+    return false;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -88,6 +114,7 @@ void Lbw3dWidget::paintGL()
 {
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
     f->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    f->glEnable(GL_CULL_FACE) ;
 
     // setup perspective
     QMatrix4x4 perspectiveMatrix;
@@ -105,4 +132,11 @@ void Lbw3dWidget::paintGL()
 
     mShader->bind(perspectiveMatrix);
     mShader->drawBuffer(mGeometryBuffer,modelview);
+
+    f->glDisable(GL_CULL_FACE); // otherwise: can't see 2D Paintings..
+}
+
+//-------------------------------------------------------------------------------------------------
+void Lbw3dWidget::paint2dLayers()
+{
 }

@@ -3,7 +3,7 @@
 
 
 #include <QList>
-
+#include <QTime>
 #include <QOpenGLWidget>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
@@ -29,12 +29,18 @@ public slots:
     void setCamDist(double dist);
 
 protected:
-    virtual void paintGL();
-    virtual void initializeGL();
-    virtual void wheelEvent(QWheelEvent * event);
+    virtual void paintGL() override;
+    virtual void paint2dLayers();
+    virtual void initializeGL() override;
+    virtual void paintEvent(QPaintEvent *e) override;
+    virtual void wheelEvent(QWheelEvent * event) override;
+    virtual void initWidget();
 
 private slots:
-    virtual void process();
+     void process();
+
+protected:
+     virtual bool processState(float speed); // normalized game speed (1 ~ normspeed)
 
 private:
     void setupModels();
@@ -45,6 +51,7 @@ private:
     float mCamFoV;
     float mCamDist;
 
+    QTime mStopWatch;
     LbaBody                mBody;
     LbaPalette             mPalette;
     LbwShader             *mShader;
