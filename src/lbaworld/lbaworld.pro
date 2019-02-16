@@ -6,6 +6,7 @@ TEMPLATE = app
 TARGET = lbaworld
 INCLUDEPATH += .
 QT += widgets
+QMAKE_CXXFLAGS += -std=c++11
 
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)
