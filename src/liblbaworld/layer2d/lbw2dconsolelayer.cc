@@ -47,6 +47,10 @@ void Lbw2dConsoleLayer::render(const QRect &window, QPainter &p)
     p.setPen(Qt::white);
     p.setFont(QFont("monospace"));
     p.drawText(QRect(rect.x(),rect.height()-20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,"] " + mCurrentInput);
+
+    for (int i=0; i<mConsole->logCount(); i++) {
+        p.drawText(QRect(rect.x(),rect.height()-(i+2)*20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,mConsole->logEntry(i));
+    }
 }
 
 //-------------------------------------------------------------------------------------------------

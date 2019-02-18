@@ -25,6 +25,7 @@ public slots:
     void addOutout(const QString &logmsg);
 
 private:
+    void run(const QStringList &parts);
     static QStringList split(const QString &input);
 
     enum ExprState {
@@ -39,7 +40,7 @@ private:
         QString   ret;
     };
 
-    QList<Expr>    mExprStack;
+    QList<QString> mExprStack;
     QList<QString> mLogs;
 };
 

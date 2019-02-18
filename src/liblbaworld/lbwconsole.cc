@@ -14,8 +14,10 @@ LbwConsole::~LbwConsole()
 //-------------------------------------------------------------------------------------------------
 void LbwConsole::exec(const QString &expr)
 {
-    QStringList parts = split(expr);
-    qDebug() << parts;
+    if (expr.trimmed().isEmpty())
+        return;
+    mExprStack << expr;
+    run(split(expr));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -29,13 +31,21 @@ QString LbwConsole::stackEntry(int i) const
 {
     Q_ASSERT(i >= 0);
     Q_ASSERT(i < mExprStack.size());
-    return mExprStack[i].expression;
+    return mExprStack[i];
 }
 
 //-------------------------------------------------------------------------------------------------
 void LbwConsole::addOutout(const QString &logmsg)
 {
     mLogs << logmsg;
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwConsole::run(const QStringList &parts)
+{
+    if (parts.isEmpty())
+        return;
+    mLogs << "] " + parts.join(' ');
 }
 
 //-------------------------------------------------------------------------------------------------
