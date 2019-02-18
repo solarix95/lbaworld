@@ -1,10 +1,11 @@
 #include <QDebug>
 #include <math.h>
 #include "layer2d/lbw2dconsolelayer.h"
+#include "lbwconsole.h"
 
 //-------------------------------------------------------------------------------------------------
-Lbw2dConsoleLayer::Lbw2dConsoleLayer()
- : mIsActive(false)
+Lbw2dConsoleLayer::Lbw2dConsoleLayer(LbwConsole *c)
+ : mIsActive(false), mConsole(c)
 {
     mPosCurrent = mPosTarget = -600;
 }
@@ -71,12 +72,19 @@ bool Lbw2dConsoleLayer::keyEvent(QKeyEvent *ke)
 //-------------------------------------------------------------------------------------------------
 void Lbw2dConsoleLayer::handleKeyEvent(QKeyEvent *ke)
 {
-    if (ke->key() == Qt::Key_Backspace) {
+    switch (ke->key()) {
+    case Qt::Key_Backspace: {
         if (mCurrentInput.isEmpty())
             return;
         mCurrentInput.remove(mCurrentInput.length()-1,1);
-    } else
-        mCurrentInput += ke->text();
+    } break;
+    case Qt::Key_Enter:
+    case Qt::Key_Return: {
+        mConsole->exec(mCurrentInput);
+        mCurrentInput.clear();
+    } break;
+    default: mCurrentInput += ke->text();
+    }
 }
 
 //-------------------------------------------------------------------------------------------------

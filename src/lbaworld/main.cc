@@ -8,8 +8,9 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc,argv);
 
-    LbwScreen  screen;
+
     LbwConsole console;
+    LbwScreen  screen(&console);
 
     screen.show();
 

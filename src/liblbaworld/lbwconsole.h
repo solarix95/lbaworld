@@ -25,6 +25,7 @@ public slots:
     void addOutout(const QString &logmsg);
 
 private:
+    static QStringList split(const QString &input);
 
     enum ExprState {
         Active = 0,

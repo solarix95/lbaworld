@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "lbwconsole.h"
 
 //-------------------------------------------------------------------------------------------------
@@ -8,6 +9,13 @@ LbwConsole::LbwConsole()
 //-------------------------------------------------------------------------------------------------
 LbwConsole::~LbwConsole()
 {
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwConsole::exec(const QString &expr)
+{
+    QStringList parts = split(expr);
+    qDebug() << parts;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -28,4 +36,73 @@ QString LbwConsole::stackEntry(int i) const
 void LbwConsole::addOutout(const QString &logmsg)
 {
     mLogs << logmsg;
+}
+
+//-------------------------------------------------------------------------------------------------
+QStringList LbwConsole::split(const QString &input)
+/*
+  '123 456 78'  -> '123' + '456' '78'
+  '123 "456 78" -> '123' + '456 78'
+*/
+
+{
+    QStringList ret;
+
+    enum ParserState {
+        Undef,
+        InPlaintString,
+        InEscapedString
+    };
+
+    ParserState state = Undef;
+    int pos = 0;
+    QString nextToken;
+    while (pos < input.length()) {
+        QChar next = input[pos];
+        switch (state) {
+        case Undef:
+            if (next == "\"")
+                state = InEscapedString;
+            else if (next.isSpace()); // skip spaces
+            else {
+                nextToken += next;
+                state = InPlaintString;
+            }
+            break;
+        case InPlaintString:
+            if (next.isSpace()) {
+                ret << nextToken;
+                nextToken.clear();
+                state = Undef;
+            }
+            else nextToken += next;
+            break;
+        case InEscapedString: {
+            if (next == "\\") {
+                QChar nextNext = pos < input.length()-1 ? input[pos+1] : QChar();
+
+                if (nextNext == "\"") { // x\"x -> x"x
+                    nextToken += "\"";
+                    pos++; // skip two characters total
+                } else if (nextNext == "\\"){
+                    nextToken += "\\";
+                    pos++; // skip two characters total
+                } else {
+                    // Unknown escape Sequence
+                }
+            } else if (next == "\"") {
+                ret << nextToken;
+                nextToken.clear();
+                state = Undef;
+            } else
+                nextToken += next;
+        } break;
+        default:
+            Q_ASSERT(0 && "Never ever reach this point");
+        }
+        pos++;
+    }
+    if (!nextToken.isEmpty())
+        ret << nextToken;
+    return ret;
 }

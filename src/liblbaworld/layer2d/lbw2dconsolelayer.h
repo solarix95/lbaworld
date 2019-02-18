@@ -4,11 +4,12 @@
 #include "lbw2dlayer.h"
 #include "rendering/lbwplasmaeffect.h"
 
+class LbwConsole;
 class Lbw2dConsoleLayer : public Lbw2dLayer
 {
     Q_OBJECT
 public:
-    Lbw2dConsoleLayer();
+    Lbw2dConsoleLayer(LbwConsole *c);
 
     virtual bool processState(float speed) override;
     virtual void render(const QRect &window, QPainter &p) override;
@@ -23,6 +24,7 @@ private:
     float    mPosTarget;
     float    mPosCurrent;
     LbwPlasmaEffect mPlasma;
+    LbwConsole *mConsole;
 };
 
 #endif // LBW2DCONSOLELAYER_H
