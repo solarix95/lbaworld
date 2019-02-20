@@ -11,6 +11,8 @@ class LbwSdlAudio : public LbwAudio
 public:
     LbwSdlAudio(const LbaRess &ress);
 
+    virtual void init() override;
+
 protected:
     virtual void playLocalMusicFile(const QString &filename);
     virtual void playVocBuffer(const QByteArray &vocData, int repeats);

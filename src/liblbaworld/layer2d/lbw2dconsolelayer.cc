@@ -49,7 +49,9 @@ void Lbw2dConsoleLayer::render(const QRect &window, QPainter &p)
     p.drawText(QRect(rect.x(),rect.height()-20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,"] " + mCurrentInput);
 
     for (int i=0; i<mConsole->logCount(); i++) {
-        p.drawText(QRect(rect.x(),rect.height()-(i+2)*20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,mConsole->logEntry(i));
+        int logIndex = mConsole->logCount()-1-i;
+        p.setPen(mConsole->logColor(logIndex));
+        p.drawText(QRect(rect.x(),rect.height()-(i+2)*20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,mConsole->logEntry(logIndex));
     }
 }
 

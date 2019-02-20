@@ -35,9 +35,14 @@ QString LbwConsole::stackEntry(int i) const
 }
 
 //-------------------------------------------------------------------------------------------------
-void LbwConsole::addOutout(const QString &logmsg)
+void LbwConsole::addOutput(const QString &logmsg)
 {
-    mLogs << logmsg;
+    if (logmsg.startsWith("#") && logmsg.length() > 7) {
+        QString color = logmsg.mid(0,7); // red -> #ff0000
+        QString msg   = logmsg.mid(8);
+        mLogs << Log(msg.trimmed(),color);
+    } else
+        mLogs << Log(logmsg, Qt::white);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -45,7 +50,7 @@ void LbwConsole::run(const QStringList &parts)
 {
     if (parts.isEmpty())
         return;
-    mLogs << "] " + parts.join(' ');
+    mLogs << Log("] " + parts.join(' '),Qt::white);
 }
 
 //-------------------------------------------------------------------------------------------------

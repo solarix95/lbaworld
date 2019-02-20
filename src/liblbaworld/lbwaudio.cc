@@ -8,6 +8,11 @@ LbwAudio::LbwAudio(const LbaRess &ress)
 }
 
 //-------------------------------------------------------------------------------------------------
+void LbwAudio::init()
+{
+}
+
+//-------------------------------------------------------------------------------------------------
 void LbwAudio::playFlaVoc(int index, int repeats)
 {
     QByteArray buffer = mRess.data(LbaRess::LBA1,LbaRess::FlaSmpl,index);

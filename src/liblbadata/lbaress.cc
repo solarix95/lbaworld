@@ -132,17 +132,25 @@ void LbaRess::processFiles(const QFileInfoList &files, Source source)
             if (!mLbaFlas.contains(next))
                 mLbaFlas[next] = files[i].absoluteFilePath();
 
-        if (next == "flasamp.hqr" && !mContent[source][FlaSmpl])
+        if (next == "flasamp.hqr" && !mContent[source][FlaSmpl]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][FlaSmpl] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "ress.hqr" && !mContent[source][Ress])
+        if (next == "ress.hqr" && !mContent[source][Ress]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][Ress] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "body.hqr" && !mContent[source][Body])
+        if (next == "body.hqr" && !mContent[source][Body]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][Body] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "invobj.hqr" && !mContent[source][StaticObjs])                        // LBA1 only
+        if (next == "invobj.hqr" && !mContent[source][StaticObjs]) {                        // LBA1 only
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());
+        }
 
         if (next == "objfix.hqr" && !mContent[source][StaticObjs])                        // LBA2 only
             mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());

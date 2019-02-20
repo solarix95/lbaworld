@@ -2,6 +2,7 @@
 #define LBA_AUDIO_H
 
 #include <QObject>
+#include <QString>
 #include <lbaress.h>
 
 class LbwAudio : public QObject
@@ -9,6 +10,11 @@ class LbwAudio : public QObject
     Q_OBJECT
 public:
     LbwAudio(const LbaRess &ress);
+
+    virtual void init();
+
+signals:
+    void log(const QString &msg);
 
 public slots:
     void playFlaVoc(int index, int repeats = 0);

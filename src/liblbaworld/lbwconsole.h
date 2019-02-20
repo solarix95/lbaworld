@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QList>
 #include <QObject>
+#include <QColor>
 
 class LbwConsole : public QObject
 {
@@ -18,11 +19,12 @@ public:
     int     stackSize() const;
     QString stackEntry(int i) const;
 
-    inline int     logCount() const      { return mLogs.count(); }
-    inline QString logEntry(int i) const { return mLogs[i];      }
+    inline int     logCount() const      { return mLogs.count();  }
+    inline QString logEntry(int i) const { return mLogs[i].msg;   }
+    inline QColor  logColor(int i) const { return mLogs[i].color; }
 
 public slots:
-    void addOutout(const QString &logmsg);
+    void addOutput(const QString &logmsg);
 
 private:
     void run(const QStringList &parts);
@@ -40,8 +42,14 @@ private:
         QString   ret;
     };
 
+    struct Log {
+        QString msg;
+        QColor  color;
+        Log(const QString &s, QColor c): msg(s), color(c) {}
+    };
+
     QList<QString> mExprStack;
-    QList<QString> mLogs;
+    QList<Log>     mLogs;
 };
 
 #endif // LBWCONSOLE_H

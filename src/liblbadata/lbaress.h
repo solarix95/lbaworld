@@ -6,16 +6,18 @@
 #include <QStringList>
 #include <QFileInfoList>
 #include <QMap>
+#include <QObject>
+
 
 class HqrFile;
-class LbaRess
+class LbaRess : public QObject
 {
+    Q_OBJECT
 public:
     LbaRess();
     virtual ~LbaRess();
 
     void init();
-
 
     enum Source {
         LBA1 = 0,   // Datasource: LBA1
@@ -45,13 +47,15 @@ public:
     QStringList flas() const;
     QByteArray  fla(const QString &name) const;
 
+signals:
+    void log(const QString &msg);
+
 private:
     QString findLbaData(const QString &sourcename) const;
     void    processDir(const QString &dirName, Source source);
     void    processFiles(const QFileInfoList &files, Source source);
 
     LbaContent  mContent[3]; // LBA1, LBA2, LBAWorld
-
 
     QString     mLbaRessFile;        // Ress.hqr, Palette,
     HqrFile    *mLbaRess;
