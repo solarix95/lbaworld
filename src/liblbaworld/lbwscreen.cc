@@ -40,6 +40,8 @@ void LbwScreen::initWidget()
 
     m2dLayers << new Lbw2dConsoleLayer(mConsole);
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
+
+    Lbw3dWidget::initWidget();
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -24,6 +24,9 @@ public:
 
     void init(const LbaBody &body, LbaAnimation *ani, int keyFrame, const LbaPalette &pal, int flags);
 
+signals:
+    void ready2run();
+
 public slots:
     void setCamFov(int fov);
     void setCamDist(double dist);

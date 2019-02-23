@@ -19,7 +19,8 @@ HEADERS += \
     ../liblbaworld/lbw2dlayer.h \
     ../liblbaworld/layer2d/lbw2dposterlayer.h \
     ../liblbaworld/layer2d/lbw2dconsolelayer.h \
-    ../liblbaworld/rendering/lbwplasmaeffect.h
+    ../liblbaworld/rendering/lbwplasmaeffect.h \
+    ../liblbaworld/lbwmissioncontrol.h
 
 SOURCES += \
     ../liblbaworld/lbwaudio.cc \
@@ -35,7 +36,8 @@ SOURCES += \
     ../liblbaworld/lbw2dlayer.cc \
     ../liblbaworld/layer2d/lbw2dposterlayer.cc \
     ../liblbaworld/layer2d/lbw2dconsolelayer.cc \
-    ../liblbaworld/rendering/lbwplasmaeffect.cc
+    ../liblbaworld/rendering/lbwplasmaeffect.cc \
+    ../liblbaworld/lbwmissioncontrol.cc
 
 RESOURCES += ../liblbaworld/resources.qrc
 

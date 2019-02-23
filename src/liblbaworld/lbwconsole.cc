@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QApplication>
 #include "lbwconsole.h"
 
 //-------------------------------------------------------------------------------------------------
@@ -17,6 +18,7 @@ void LbwConsole::exec(const QString &expr)
     if (expr.trimmed().isEmpty())
         return;
     mExprStack << expr;
+    mStackCursor = mExprStack.count()-1;
     run(split(expr));
 }
 
@@ -32,6 +34,39 @@ QString LbwConsole::stackEntry(int i) const
     Q_ASSERT(i >= 0);
     Q_ASSERT(i < mExprStack.size());
     return mExprStack[i];
+}
+
+//-------------------------------------------------------------------------------------------------
+QString LbwConsole::cursor() const
+{
+    if (mExprStack.isEmpty())
+        return "";
+    if (mStackCursor < 0)
+        return mExprStack.first();
+    if (mStackCursor >= mExprStack.count())
+        return mExprStack.last();
+    return mExprStack[mStackCursor];
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwConsole::incCursor(int dir)
+{
+    mStackCursor += (dir < 0 ? -1 : 1);
+
+    if (mStackCursor < 0)
+        mStackCursor = 0;
+    if (mStackCursor >= mExprStack.count())
+        mStackCursor = mExprStack.count()-1;
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwConsole::init()
+{
+    foreach(QString arg, QApplication::arguments()) {
+        if (arg.startsWith("--exec=")) {
+            exec(arg.split("=").last());
+        }
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -51,6 +86,9 @@ void LbwConsole::run(const QStringList &parts)
     if (parts.isEmpty())
         return;
     mLogs << Log("] " + parts.join(' '),Qt::white);
+    QStringList args = parts;
+    QString     cmd  = args.takeFirst();
+    emit requestCmd(cmd, args);
 }
 
 //-------------------------------------------------------------------------------------------------

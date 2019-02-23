@@ -5,7 +5,7 @@
 
 //-------------------------------------------------------------------------------------------------
 Lbw2dConsoleLayer::Lbw2dConsoleLayer(LbwConsole *c)
- : mIsActive(false), mConsole(c)
+    : mIsActive(false), mConsole(c)
 {
     mPosCurrent = mPosTarget = -600;
 }
@@ -88,6 +88,14 @@ void Lbw2dConsoleLayer::handleKeyEvent(QKeyEvent *ke)
     case Qt::Key_Return: {
         mConsole->exec(mCurrentInput);
         mCurrentInput.clear();
+    } break;
+    case Qt::Key_Up: {
+        mConsole->incCursor(+1);
+        mCurrentInput = mConsole->cursor();
+    } break;
+    case Qt::Key_Down: {
+        mConsole->incCursor(-1);
+        mCurrentInput = mConsole->cursor();
     } break;
     default: mCurrentInput += ke->text();
     }

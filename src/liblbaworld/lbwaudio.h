@@ -17,6 +17,7 @@ signals:
     void log(const QString &msg);
 
 public slots:
+    void playVoc(LbaRess::Source source, LbaRess::Content cont, int index, int repeats = 0);
     void playFlaVoc(int index, int repeats = 0);
     void playMusic(const QString &filename);
     void stop();
