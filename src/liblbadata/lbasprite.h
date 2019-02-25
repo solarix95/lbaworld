@@ -11,7 +11,8 @@ public:
     enum Type {
         Sprite,
         RawSprite,
-        Image
+        Image,
+        AutoSprite
     };
 
     LbaSprite(const LbaPalette &pal, const QByteArray &buffer = QByteArray(), Type spriteType = Sprite);

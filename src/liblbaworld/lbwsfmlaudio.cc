@@ -4,7 +4,6 @@
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 
-
 //-------------------------------------------------------------------------------------------------
 LbwSfmlAudio::LbwSfmlAudio(const LbaRess &ress)
  : LbwAudio(ress),

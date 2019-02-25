@@ -1,10 +1,11 @@
 #include <QDebug>
 #include <math.h>
 #include "layer2d/lbw2dconsolelayer.h"
+#include "lbwconsole.h"
 
 //-------------------------------------------------------------------------------------------------
-Lbw2dConsoleLayer::Lbw2dConsoleLayer()
- : mIsActive(false)
+Lbw2dConsoleLayer::Lbw2dConsoleLayer(LbwConsole *c)
+    : mIsActive(false), mConsole(c)
 {
     mPosCurrent = mPosTarget = -600;
 }
@@ -46,6 +47,12 @@ void Lbw2dConsoleLayer::render(const QRect &window, QPainter &p)
     p.setPen(Qt::white);
     p.setFont(QFont("monospace"));
     p.drawText(QRect(rect.x(),rect.height()-20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,"] " + mCurrentInput);
+
+    for (int i=0; i<mConsole->logCount(); i++) {
+        int logIndex = mConsole->logCount()-1-i;
+        p.setPen(mConsole->logColor(logIndex));
+        p.drawText(QRect(rect.x(),rect.height()-(i+2)*20,rect.width(),20),Qt::AlignLeft | Qt::AlignVCenter,mConsole->logEntry(logIndex));
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -71,12 +78,27 @@ bool Lbw2dConsoleLayer::keyEvent(QKeyEvent *ke)
 //-------------------------------------------------------------------------------------------------
 void Lbw2dConsoleLayer::handleKeyEvent(QKeyEvent *ke)
 {
-    if (ke->key() == Qt::Key_Backspace) {
+    switch (ke->key()) {
+    case Qt::Key_Backspace: {
         if (mCurrentInput.isEmpty())
             return;
         mCurrentInput.remove(mCurrentInput.length()-1,1);
-    } else
-        mCurrentInput += ke->text();
+    } break;
+    case Qt::Key_Enter:
+    case Qt::Key_Return: {
+        mConsole->exec(mCurrentInput);
+        mCurrentInput.clear();
+    } break;
+    case Qt::Key_Up: {
+        mConsole->incCursor(+1);
+        mCurrentInput = mConsole->cursor();
+    } break;
+    case Qt::Key_Down: {
+        mConsole->incCursor(-1);
+        mCurrentInput = mConsole->cursor();
+    } break;
+    default: mCurrentInput += ke->text();
+    }
 }
 
 //-------------------------------------------------------------------------------------------------

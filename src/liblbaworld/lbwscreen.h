@@ -4,11 +4,12 @@
 #include "lbw3dwidget.h"
 
 class Lbw2dLayer;
+class LbwConsole;
 class LbwScreen : public Lbw3dWidget
 {
     Q_OBJECT
 public:
-    LbwScreen(QWidget *parent = 0);
+    LbwScreen(LbwConsole *c, QWidget *parent = 0);
     virtual ~LbwScreen();
 
 public slots:
@@ -29,6 +30,7 @@ private:
 
     QString            mStatusText;
     QList<Lbw2dLayer*> m2dLayers;
+    LbwConsole        *mConsole;
 };
 
 #endif // LBWSCREEN_H

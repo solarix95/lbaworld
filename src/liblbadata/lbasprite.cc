@@ -18,13 +18,19 @@ LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer, LbaSprite:
         fromRawSpriteBuffer(buffer); break;
     case Image:
         fromImageBuffer(buffer); break;
+    case AutoSprite: {
+        if (fromImageBuffer(buffer))
+            break;
+        if (fromRawSpriteBuffer(buffer))
+            break;
+        fromSpriteBuffer(buffer);
+    } break;
     }
 }
 
 //-------------------------------------------------------------------------------------------
 bool LbaSprite::fromImageBuffer(const QByteArray &buffer)
 {
-
     mImage = QImage();
 
     int width;
@@ -141,12 +147,20 @@ bool LbaSprite::fromRawSpriteBuffer(const QByteArray &buffer)
         }
 }
     */
+    mImage = QImage();
     BinaryReader reader(buffer);
     reader.skip(8);
     const auto width   = reader.readUint8();
     const auto height  = reader.readUint8();
     reader.skip(2);
-    Q_ASSERT(reader.pos() == 12);
+    if (reader.pos() != 12)
+        return false;
+
+    if (height*width <= 0)
+        return false;
+
+    if (height*width > (buffer.size() - 12))
+        return false;
 
     QImage image(width, height, QImage::Format_ARGB32);
 
@@ -156,8 +170,10 @@ bool LbaSprite::fromRawSpriteBuffer(const QByteArray &buffer)
         }
     }
 
-    if (!reader.error())
-        mImage = image;
+    if (reader.error())
+        return false;
+
+    mImage = image;
 
     return true;
 }

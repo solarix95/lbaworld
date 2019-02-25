@@ -3,10 +3,12 @@
 #include "layer2d/lbw2dconsolelayer.h"
 
 //-------------------------------------------------------------------------------------------------
-LbwScreen::LbwScreen(QWidget *parent)
+LbwScreen::LbwScreen(LbwConsole *c, QWidget *parent)
     : Lbw3dWidget(parent),
-      mStatusText("LBW Engine")
+      mStatusText("LBW Engine"),
+      mConsole(c)
 {
+    Q_ASSERT(c);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -36,9 +38,10 @@ void LbwScreen::initWidget()
     Q_ASSERT(done);
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
 
-    m2dLayers << new Lbw2dConsoleLayer();
+    m2dLayers << new Lbw2dConsoleLayer(mConsole);
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
 
+    Lbw3dWidget::initWidget();
 }
 
 //-------------------------------------------------------------------------------------------------

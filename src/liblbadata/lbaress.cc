@@ -63,6 +63,18 @@ QByteArray LbaRess::data(LbaRess::Source source, LbaRess::Content content, int i
 }
 
 //-------------------------------------------------------------------------------------------------
+QStringList LbaRess::tracks() const
+{
+    return mLbaTracks.keys();
+}
+
+//-------------------------------------------------------------------------------------------------
+QString LbaRess::pathByTrack(const QString &track) const
+{
+    return mLbaTracks.value(track,"");
+}
+
+//-------------------------------------------------------------------------------------------------
 QStringList LbaRess::flas() const
 {
     return mLbaFlas.keys();
@@ -76,6 +88,36 @@ QByteArray LbaRess::fla(const QString &name) const
         return QByteArray();
 
     return f.readAll();
+}
+
+//-------------------------------------------------------------------------------------------------
+bool LbaRess::fromUrl(const QString &url, LbaRess::Source &s, LbaRess::Content &cont, QString &ident)
+{
+    QStringList parts = url.split("/");
+    if (parts.count() != 3) return false;
+
+    if (parts[0] == "1")
+        s = LbaRess::LBA1;
+    else if (parts[0] == "2")
+        s = LbaRess::LBA2;
+    else if (parts[0] == "w")
+        s = LbaRess::LBAW;
+    else
+        return false;
+
+    if (parts[1] == "spl")
+        cont = LbaRess::Samples;
+    else if (parts[1] == "flaspl")
+        cont = LbaRess::FlaSmpl;
+    else if (parts[1] == "ress")
+        cont = LbaRess::Ress;
+    else if (parts[1] == "spr")
+        cont = LbaRess::Sprites;
+    else
+        return false;
+
+    ident = parts[2];
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -132,17 +174,30 @@ void LbaRess::processFiles(const QFileInfoList &files, Source source)
             if (!mLbaFlas.contains(next))
                 mLbaFlas[next] = files[i].absoluteFilePath();
 
-        if (next == "flasamp.hqr" && !mContent[source][FlaSmpl])
+        if (next == "flasamp.hqr" && !mContent[source][FlaSmpl]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][FlaSmpl] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "ress.hqr" && !mContent[source][Ress])
+        if (next == "samples.hqr" && !mContent[source][Samples]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
+            mContent[source][Samples] = new HqrFile(files[i].absoluteFilePath());
+        }
+
+        if (next == "ress.hqr" && !mContent[source][Ress]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][Ress] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "body.hqr" && !mContent[source][Body])
+        if (next == "body.hqr" && !mContent[source][Body]) {
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][Body] = new HqrFile(files[i].absoluteFilePath());
+        }
 
-        if (next == "invobj.hqr" && !mContent[source][StaticObjs])                        // LBA1 only
+        if (next == "invobj.hqr" && !mContent[source][StaticObjs]) {                        // LBA1 only
+            emit log(tr("process '%1'").arg(files[i].absoluteFilePath()));
             mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());
+        }
 
         if (next == "objfix.hqr" && !mContent[source][StaticObjs])                        // LBA2 only
             mContent[source][StaticObjs] = new HqrFile(files[i].absoluteFilePath());
@@ -158,6 +213,9 @@ void LbaRess::processFiles(const QFileInfoList &files, Source source)
 
         if (next == "file3d.hqr" && !mContent[source][File3d])
             mContent[source][File3d] = new HqrFile(files[i].absoluteFilePath());
+
+        if (next.endsWith(".ogg"))
+            mLbaTracks[next.mid(0,next.length()-4)] = files[i].absoluteFilePath();
     }
 }
 

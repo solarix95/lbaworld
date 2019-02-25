@@ -6,16 +6,17 @@
 #include <QStringList>
 #include <QFileInfoList>
 #include <QMap>
+#include <QObject>
 
 class HqrFile;
-class LbaRess
+class LbaRess : public QObject
 {
+    Q_OBJECT
 public:
     LbaRess();
     virtual ~LbaRess();
 
     void init();
-
 
     enum Source {
         LBA1 = 0,   // Datasource: LBA1
@@ -31,7 +32,8 @@ public:
         Ress,        // Ress.hqr
         Sprites,     // Sprites.hqr
         SpritesRaw,  // LBA2: Spriraw.hqr
-        FlaSmpl      // LBA1: FLASAMP.HQR
+        FlaSmpl,     // LBA1: FLASAMP.HQR
+        Samples      // LBA1: SAMPLES.HQR
     };
 
     typedef QMap<Content,HqrFile*> LbaContent;
@@ -41,9 +43,15 @@ public:
 
     // Files..
     QStringList tracks() const; // ... from steam (
+    QString     pathByTrack(const QString &track) const;
 
     QStringList flas() const;
     QByteArray  fla(const QString &name) const;
+
+    static bool fromUrl(const QString &url, LbaRess::Source &s, LbaRess::Content &cont, QString &ident);
+
+signals:
+    void log(const QString &msg);
 
 private:
     QString findLbaData(const QString &sourcename) const;
@@ -51,7 +59,6 @@ private:
     void    processFiles(const QFileInfoList &files, Source source);
 
     LbaContent  mContent[3]; // LBA1, LBA2, LBAWorld
-
 
     QString     mLbaRessFile;        // Ress.hqr, Palette,
     HqrFile    *mLbaRess;
@@ -72,8 +79,9 @@ private:
 
     QString     mLbaSamplesFile;    // Samples.hqr, VOC-Sounds
 
-    QStringList mLbaTracks;         // Steam Tracks
-    QMap<QString,QString> mLbaFlas;  // LBA Cinematics
+    QMap<QString,QString> mLbaFlas;   // LBA Cinematics
+    QMap<QString,QString> mLbaTracks;
+
     HqrFile    *mLbaFlaSamples;
 };
 

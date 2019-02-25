@@ -14,13 +14,24 @@ LbwSdlAudio::LbwSdlAudio(const LbaRess &ress)
  : LbwAudio(ress)
 {
     memset(&mChannels, 0, sizeof(mChannels));
+}
 
-    if (SDL_Init(SDL_INIT_AUDIO) < 0)
+//-------------------------------------------------------------------------------------------------
+void LbwSdlAudio::init()
+{
+    emit log(tr("initialze SDL..."));
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         qWarning() << "SDL INIT ERROR";
+        emit log(tr("SDL_Init error: '%1'").arg(SDL_GetError()));
+    } else
+        emit log(tr("#00ff00 ...done"));
 
+    emit log(tr("initialze Mixer with %1 %2 2 256...").arg(ORIGINAL_GAME_FREQUENCY).arg(AUDIO_S16));
     if (Mix_OpenAudio(ORIGINAL_GAME_FREQUENCY, AUDIO_S16, 2, 256) < 0) {
         qWarning() << "Mix_OpenAudio" << Mix_GetError();
-    }
+        emit log(tr("Mix_OpenAudio error: '%1'").arg(Mix_GetError()));
+    } else
+        emit log(tr("#00ff00 ...done"));
 
     QTimer *t = new QTimer();
     connect(t, SIGNAL(timeout()), this, SLOT(checkChannels()));
