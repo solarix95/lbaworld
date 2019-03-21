@@ -58,7 +58,6 @@ void LbaModelViewer::loadModel()
         keyFrame = qMin(mUi.spbAniFrame->value(), ani->keyFrameCount()-1);
     }
 
-
     int flags = 0;
 
     // TODO: proper QFlags<>..
@@ -67,7 +66,7 @@ void LbaModelViewer::loadModel()
     flags += mUi.chkSpheres->isChecked() ? 0x04 : 0;
     flags += mUi.chkBones->isChecked() ?   0x08 : 0;
 
-
-    mUi.openGLWidget->init(body, ani,keyFrame, pal,flags);
+    mUi.openGLWidget->clearGeometryBuffers();
+    mUi.openGLWidget->appendGeometryBuffer(body, ani,keyFrame, pal,flags);
 }
 

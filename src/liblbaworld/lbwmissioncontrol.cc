@@ -13,6 +13,7 @@
 LbwMissionControl::LbwMissionControl(LbaRess &ress)
  : mRess(ress), mAudio(NULL), mScreen(NULL)
 {
+    setupHelp();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -43,6 +44,30 @@ void LbwMissionControl::exec(const QString &cmd, const QStringList &args)
 {
     QMetaObject::invokeMethod(this, cmd.toUtf8().data(), Qt::DirectConnection,
                               Q_ARG(QStringList,args));
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwMissionControl::help(const QStringList &args)
+{
+    QString out;
+    if (args.isEmpty()) {
+        QMapIterator<QString, QString> i(mCommandHelp);
+         while (i.hasNext()) {
+             i.next();
+             if (!out.isEmpty())
+                 out += " | ";
+             out += i.key();
+         }
+    } else {
+        out = mCommandHelp.value(args.first(),"");
+    }
+
+    if (out.isEmpty()) {
+        emit log("#FF0000 Nobody can help you :(");
+        return;
+    }
+
+    emit log("#00FF00 " + out);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -101,5 +126,12 @@ void LbwMissionControl::showposter(const QStringList &args)
         return;
 
     mScreen->fadeTo(img);
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbwMissionControl::setupHelp()
+{
+    mCommandHelp["URL"] = "LBA Resource URL: <version>/<hqr-source>/<index>";
+    mCommandHelp["playspl"] = "playspl <URL>";
 }
 

@@ -27,16 +27,25 @@ Lbw3dWidget::Lbw3dWidget(QWidget *parent)
 }
 
 //-------------------------------------------------------------------------------------------------
-void Lbw3dWidget::init(const LbaBody &body, LbaAnimation *ani, int keyFrame, const LbaPalette &pal, int flags)
+void Lbw3dWidget::clearGeometryBuffers()
+{
+    makeCurrent();
+    qDeleteAll(mGeometryBuffers);
+    mGeometryBuffers.clear();
+}
+
+//-------------------------------------------------------------------------------------------------
+void Lbw3dWidget::appendGeometryBuffer(const LbaBody &body, LbaAnimation *ani, int keyFrame, const LbaPalette &pal, int flags)
 {
     makeCurrent();
     mRenderFlags = flags;
-    mBody = body;
-    mBody.setAnimation(ani);
-    mBody.translateVertices(keyFrame);
-    mPalette = pal;
 
-    mGeometryBuffer.init(mBody,mPalette);
+    LbaBody renderedBody = body;
+    renderedBody.setAnimation(ani);
+    renderedBody.translateVertices(keyFrame);
+
+    mGeometryBuffers << new LbwGeometryBuffer();
+    mGeometryBuffers.last()->init(renderedBody,pal);
     update();
 }
 
@@ -132,7 +141,9 @@ void Lbw3dWidget::paintGL()
     QMatrix4x4 modelview = pos * rot;
 
     mShader->bind(perspectiveMatrix);
-    mShader->drawBuffer(mGeometryBuffer,modelview);
+
+    foreach(LbwGeometryBuffer *buffer, mGeometryBuffers)
+        mShader->drawBuffer(*buffer,modelview);
 
     f->glDisable(GL_CULL_FACE); // otherwise: can't see 2D Paintings..
 }

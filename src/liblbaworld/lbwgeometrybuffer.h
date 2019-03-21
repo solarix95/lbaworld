@@ -46,4 +46,6 @@ private:
     BodyAnimation mAnimatedBody;
 };
 
+typedef QList<LbwGeometryBuffer*> LbwGeometryBuffers;
+
 #endif // LBWGEOMETRYBUFFER_H

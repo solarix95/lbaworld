@@ -22,7 +22,8 @@ class Lbw3dWidget : public QOpenGLWidget
 public:
     explicit Lbw3dWidget(QWidget *parent = 0);
 
-    void init(const LbaBody &body, LbaAnimation *ani, int keyFrame, const LbaPalette &pal, int flags);
+    void clearGeometryBuffers();
+    void appendGeometryBuffer(const LbaBody &body, LbaAnimation *ani, int keyFrame, const LbaPalette &pal, int flags);
 
 signals:
     void ready2run();
@@ -55,10 +56,9 @@ private:
     float mCamDist;
 
     QTime mStopWatch;
-    LbaBody                mBody;
-    LbaPalette             mPalette;
+
     LbwShader             *mShader;
-    LbwGeometryBuffer      mGeometryBuffer;
+    LbwGeometryBuffers     mGeometryBuffers;
 };
 
 

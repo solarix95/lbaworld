@@ -1,5 +1,3 @@
-
-
 #include <QApplication>
 
 #include "lbaress.h"
@@ -23,6 +21,9 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&console,     SIGNAL(requestCmd(QString,QStringList)),
                      &control, SLOT(exec(QString,QStringList)));
+
+    QObject::connect(&control,     SIGNAL(log(QString)),
+                     &console, SLOT(addOutput(QString)));
     QObject::connect(&resources,   SIGNAL(log(QString)),
                      &console, SLOT(addOutput(QString)));
     QObject::connect(&audioSystem, SIGNAL(log(QString)),
