@@ -41,12 +41,9 @@ inline void initVertex(LbwVertex &v, int vi, const LbaBody::Vertices &points, co
 }
 #define INITV(V) initVertex(v[vindex],V,points,normals,polygons[i]);
 
-
-
 //-------------------------------------------------------------------------------------------------
 LbwGeometryBuffer::LbwGeometryBuffer()
 {
-
 }
 
 //-------------------------------------------------------------------------------------------------

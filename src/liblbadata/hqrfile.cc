@@ -12,7 +12,6 @@ HqrFile::HqrFile(const QString &filename)
 //-------------------------------------------------------------------------------------------
 HqrFile::~HqrFile()
 {
-
 }
 
 //-------------------------------------------------------------------------------------------
@@ -45,6 +44,18 @@ bool HqrFile::fromBuffer(const QByteArray &buffer)
 }
 
 //-------------------------------------------------------------------------------------------
+QByteArray HqrFile::toByteArray() const
+{
+    QList<QByteArray> compressedBlocks;
+    for (int i=0; i<mBlocks.count(); i++) {
+        compressedBlocks << compressEntry(mBlocks[i]);
+    }
+
+    Q_ASSERT(compressedBlocks.size() == mBlocks.size());
+
+}
+
+//-------------------------------------------------------------------------------------------
 int HqrFile::count() const
 {
     return mBlocks.count();
@@ -56,6 +67,12 @@ const QByteArray &HqrFile::block(int index) const
     Q_ASSERT(index >= 0);
     Q_ASSERT(index < mBlocks.count());
     return mBlocks[index];
+}
+
+//-------------------------------------------------------------------------------------------
+void HqrFile::appendBlock(const QByteArray &inData)
+{
+    mBlocks << inData;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -114,10 +131,39 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
                 *(dst++) = *(src++);
             }
             decompsize -= lenght;
-            if (decompsize <= 0)
+            Q_ASSERT(decompsize >= 0); // negative: ptr/dst are invalide pointers!
+            if (decompsize == 0)
                 return outBuffer;
         }
     } while (decompsize);
 
     return outBuffer;
+}
+
+//-------------------------------------------------------------------------------------------
+QByteArray HqrFile::compressEntry(const QByteArray &inBuffer) const
+{
+    BinaryWriter writer;
+
+    // Write 8Bytes-Blocks
+    for (int bi=0; bi < inBuffer.size()/8; bi++) {
+        writer.append((quint8)0);   // 8Bits -> 8Bytes without compression
+        for (int sb=0; sb<8; sb++)
+            writer.append(inBuffer.at((bi*8) + sb));
+    }
+
+    // Tail
+    qint8 tailSize = inBuffer.size() % 8;
+    if (tailSize == 0)
+        return writer.buffer();
+
+    qint8 tailFlag = 0xff;
+    for (int i=0; i<tailSize; i++)
+        tailFlag << 0;
+
+    writer.append(tailFlag);
+    for (int bi=0; bi < tailSize; bi++) {
+        writer.append(inBuffer.at((inBuffer.size()/8)*8 + bi));
+    }
+    return writer.buffer();
 }

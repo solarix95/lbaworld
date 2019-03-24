@@ -11,11 +11,11 @@ Lbw2dPosterLayer::Lbw2dPosterLayer()
 //-------------------------------------------------------------------------------------------------
 void Lbw2dPosterLayer::render(const QRect &window, QPainter &p)
 {
-    if (mImageQueue.isEmpty())
-        return;
-
     p.fillRect(window,Qt::black);
     p.setOpacity(mOpacity);
+
+    if (mImageQueue.isEmpty())
+        return;
 
     QImage img = nextFrame();
     while (img.height() < window.height()/2)
@@ -46,19 +46,14 @@ bool Lbw2dPosterLayer::processState(float)
             deQueue();
 
             // Start?
-            if (!mImageQueue.isEmpty()) {
+            if (!mImageQueue.isEmpty())
                 setState(FadeIn);
-            }
         }
         stateChanged = true;
         break;
     case OnAir:
-        if (mImageQueue.first().movie) {
-            if (mImageQueue.first().movie->isPlaying())
-                stateChanged = true;
-            else
-                setState(FadeOut);
-        }
+        if (mImageQueue.first().movie && !mImageQueue.first().movie->isPlaying())
+            setState(FadeOut);
         break;
     }
     return stateChanged;
@@ -77,6 +72,7 @@ void Lbw2dPosterLayer::showFla(FlaMovie *movie)
     Q_ASSERT(movie);
     mImageQueue << ImageSource(movie);
     mImageQueue.last().movie->requestFrame(0);
+    connect(movie, SIGNAL(playFrame(int)), this, SIGNAL(updateRequest()));
     onNewSource();
 }
 
@@ -89,7 +85,7 @@ void Lbw2dPosterLayer::setState(Lbw2dPosterLayer::State s)
     mTimeInState.start();
 
     switch(mState) {
-        case OnAir:
+    case OnAir:
         if (mImageQueue.first().movie)
             mImageQueue.first().movie->resume();
         break;
@@ -129,4 +125,6 @@ void Lbw2dPosterLayer::onNewSource()
     case FadeOut:
         break;
     }
+
+    setVisible(true);
 }

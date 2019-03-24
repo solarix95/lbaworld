@@ -9,6 +9,7 @@ HEADERS += \
     ../liblbadata/flamovie.h \
     ../liblbadata/hqrfile.h \
     ../liblbadata/binaryreader.h \
+    ../liblbadata/binarywriter.h \
     ../liblbadata/lbapalette.h \
     ../liblbadata/lbaimage.h \
     ../liblbadata/lbabody.h \
@@ -21,6 +22,7 @@ SOURCES += \
     ../liblbadata/flamovie.cc \
     ../liblbadata/hqrfile.cc \
     ../liblbadata/binreader.cc \
+    ../liblbadata/binarywriter.cc \
     ../liblbadata/lbapalette.cc \
     ../liblbadata/lbaimage.cc \
     ../liblbadata/lbabody.cc \
@@ -28,3 +30,4 @@ SOURCES += \
     ../liblbadata/lbaanimation.cc \
     ../liblbadata/lbasprite.cc \
     ../liblbadata/lbacharacter.cc
+

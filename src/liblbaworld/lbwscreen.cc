@@ -65,6 +65,8 @@ void LbwScreen::paint2dLayers()
     }
 
     foreach (Lbw2dLayer *layer, m2dLayers) {
+        if (!layer->isVisible())
+            continue;
         p.save();
         layer->render(rect(), p);
         p.restore();

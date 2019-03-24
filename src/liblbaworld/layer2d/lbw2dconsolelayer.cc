@@ -8,6 +8,7 @@ Lbw2dConsoleLayer::Lbw2dConsoleLayer(LbwConsole *c)
     : mIsActive(false), mConsole(c)
 {
     mPosCurrent = mPosTarget = -600;
+    setVisible(true);
 }
 
 //-------------------------------------------------------------------------------------------------
