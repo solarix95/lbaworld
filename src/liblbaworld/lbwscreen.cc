@@ -30,11 +30,19 @@ void LbwScreen::fadeTo(const QImage &img)
 }
 
 //-------------------------------------------------------------------------------------------------
+void LbwScreen::fadeTo(FlaMovie *movie)
+{
+    emit requestFadeTo(movie);
+}
+
+//-------------------------------------------------------------------------------------------------
 void LbwScreen::initWidget()
 {
     // Setup Poster-Renderer
     m2dLayers << new Lbw2dPosterLayer();
-    bool done = connect(this, SIGNAL(requestFadeTo(QImage)), m2dLayers.last(), SLOT(showImage(QImage)));
+    bool done =
+       connect(this, SIGNAL(requestFadeTo(QImage)), m2dLayers.last(), SLOT(showImage(QImage))) &&
+       connect(this, SIGNAL(requestFadeTo(FlaMovie*)), m2dLayers.last(), SLOT(showFla(FlaMovie*)));
     Q_ASSERT(done);
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
 
@@ -91,7 +99,7 @@ bool LbwScreen::processState(float speed)
 
     for (int i=m2dLayers.count()-1; i >= 0; i--) {
         if (m2dLayers.at(i)->processState(speed)) {
-            return true;
+            subResult = true;
         }
     }
 

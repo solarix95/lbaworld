@@ -35,6 +35,7 @@ typedef struct FLASampleStruct {
 
 //-------------------------------------------------------------------------------------------
 FlaMovie::FlaMovie()
+ : mCurrentFrame(-1)
 {
     connect(&mAnimationTimer, SIGNAL(timeout()), this, SLOT(nextFrame()));
 }
@@ -75,14 +76,16 @@ bool FlaMovie::fromBuffer(const QByteArray &buffer)
     mBinReader.skip(1);
     mBinReader.read(&width,2);
     mBinReader.read(&height,2);
-    mBinReader.read(&numOfSamples,2);
+    numOfSamples = mBinReader.readInt16();
     mBinReader.skip(2);
+
+    if (mBinReader.error())
+        return false;
 
     qDebug() << version << numOfFrames << speed << width << height << numOfSamples;
 
     for (int i = 0; i < numOfSamples; i++) {
-        qint16 sampleId;
-        mBinReader.read(&sampleId,2);
+        qint16 sampleId = mBinReader.readInt16();
         mBinReader.skip(2);
         qDebug() << "S" << i << sampleId;
     }
@@ -122,6 +125,18 @@ QSize FlaMovie::size() const
 }
 
 //-------------------------------------------------------------------------------------------
+bool FlaMovie::isPlaying() const
+{
+    return mAnimationTimer.isActive();
+}
+
+//-------------------------------------------------------------------------------------------
+bool FlaMovie::atEnd() const
+{
+    return mCurrentFrame == (mFrames.count()-1);
+}
+
+//-------------------------------------------------------------------------------------------
 void FlaMovie::start()
 {
     mCurrentFrame = -1;
@@ -137,6 +152,14 @@ void FlaMovie::start()
 void FlaMovie::stop()
 {
     mAnimationTimer.stop();
+}
+
+//-------------------------------------------------------------------------------------------
+void FlaMovie::resume()
+{
+    if (mFrames.isEmpty() || atEnd() || mAnimationTimer.isActive())
+        return;
+    mAnimationTimer.start(1000.0/mSpeed);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -224,8 +247,6 @@ bool FlaMovie::processFrame()
 
         switch (opcode - 1) {
         case kLoadPalette: {
-            qDebug() << "LOADING PALETTE";
-
             qint16 numOfColor = *((qint16*)ptr);
             qint16 startColor = *((qint16*)(ptr + 2));
             Q_ASSERT(numOfColor >  0);
@@ -242,16 +263,12 @@ bool FlaMovie::processFrame()
             break;
         }
         case kFade: {
-            qDebug() << "FACE OUT";
             mFade++;
             break;
         }
         case kPlaySample: {
-            qDebug() << "PLAY SAMPLE" << opcodeBlockSize;
             FLASampleStruct sample;
             memcpy(&sample, ptr, sizeof(FLASampleStruct));
-
-            qDebug() << "PLAY SAMPLE" << sample.sampleNum << sample.repeat << sample.freq << sample.x << sample.y;
             samples << qMakePair<int,int>(sample.sampleNum, sample.repeat-1);
             break;
         }
@@ -261,14 +278,11 @@ bool FlaMovie::processFrame()
             break;
         }
         case kDeltaFrame: {
-            qDebug() << "DELTA FRAME";
             appendDeltaFrame((quint8*)ptr);
             break;
         }
         case kKeyFrame: {
-            qDebug() << "KEY FRAME";
             appendKeyFrame((quint8*)ptr);
-
             break;
         }
         default: {

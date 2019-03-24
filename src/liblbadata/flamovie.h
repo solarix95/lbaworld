@@ -23,9 +23,10 @@ public:
     const QImage &frame(int i);
     int           fps() const;
     QSize         size() const;
+    bool          isPlaying() const;
+    bool          atEnd() const;
 
     // Player
-
     int           currentFrameIndex() const;
     const QImage &currentFrame() const;
 
@@ -38,6 +39,7 @@ signals:
 public slots:
     void          start();
     void          stop();
+    void          resume();
     void          requestFrame(int i);
     void          requestFps(int f);
 

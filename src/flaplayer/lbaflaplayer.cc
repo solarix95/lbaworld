@@ -24,10 +24,8 @@ LbaFlaPlayer::LbaFlaPlayer(const LbaRess &ress, QWidget *parent) :
     connect(ui->spbFps, SIGNAL(valueChanged(int)), &mMovie, SLOT(requestFps(int)));
     ui->wdgMovie->play(&mMovie);
 
-
     foreach(QString next, mLbaRess.flas())
         ui->cbxFlas->addItem(next);
-
 }
 
 //---------------------------------------------------------------------------------------------------------------------

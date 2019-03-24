@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QApplication>
 
+//-------------------------------------------------------------------------------------------------
 LbaMovieWidget::LbaMovieWidget(QWidget *parent) : QWidget(parent),
     mMovie(NULL)
 {
@@ -10,6 +11,7 @@ LbaMovieWidget::LbaMovieWidget(QWidget *parent) : QWidget(parent),
         setWindowState(Qt::WindowFullScreen);
 }
 
+//-------------------------------------------------------------------------------------------------
 void LbaMovieWidget::play(FlaMovie *movie)
 {
     mMovie = movie;
@@ -21,6 +23,7 @@ void LbaMovieWidget::play(FlaMovie *movie)
     mMovie->start();
 }
 
+//-------------------------------------------------------------------------------------------------
 void LbaMovieWidget::paintEvent(QPaintEvent *)
 {
     if (!mMovie || mMovie->currentFrameIndex() < 0)

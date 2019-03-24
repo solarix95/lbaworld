@@ -3,6 +3,7 @@
 
 #include "lbw3dwidget.h"
 
+class FlaMovie;
 class Lbw2dLayer;
 class LbwConsole;
 class LbwScreen : public Lbw3dWidget
@@ -15,9 +16,11 @@ public:
 public slots:
     void setStatusText(const QString &statustext);
     void fadeTo(const QImage &img);
+    void fadeTo(FlaMovie *movie);
 
 signals:
     void requestFadeTo(const QImage &img);
+    void requestFadeTo(FlaMovie *movie);
 
 protected:
     virtual void initWidget() override;
