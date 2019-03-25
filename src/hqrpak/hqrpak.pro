@@ -5,6 +5,7 @@
 TEMPLATE = app
 TARGET = hqrpak
 INCLUDEPATH += .
+QMAKE_CXXFLAGS += -std=c++11
 
 include(../liblbadata/liblbadata.pro)
 

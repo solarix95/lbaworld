@@ -46,6 +46,9 @@ bool HqrFile::fromBuffer(const QByteArray &buffer)
 //-------------------------------------------------------------------------------------------
 QByteArray HqrFile::toByteArray() const
 {
+    if (mBlocks.isEmpty())
+        return QByteArray();
+
     QList<QByteArray> compressedBlocks;
     for (int i=0; i<mBlocks.count(); i++) {
         compressedBlocks << compressEntry(mBlocks[i]);
@@ -53,6 +56,32 @@ QByteArray HqrFile::toByteArray() const
 
     Q_ASSERT(compressedBlocks.size() == mBlocks.size());
 
+    // calculate start offset for each block:
+    QList<qint32> offsets;
+    qint32        startOfFirstBlock = mBlocks.size() * 4; // 4 bytes per block description
+    offsets << startOfFirstBlock;
+
+    for (int i=1; i<mBlocks.count(); i++) {
+        offsets << (offsets[i-1] + compressedBlocks[i-1].size() + sizeof(quint32) + sizeof(quint32) + sizeof(quint16));
+        //                                                        \  ................    HEADER ..................../
+    }
+    Q_ASSERT(offsets.count() == compressedBlocks.count());
+
+    // Now serialize everything:
+    BinaryWriter outBuffer;
+
+    foreach(qint32 offset, offsets)
+        outBuffer.append(offset);
+
+    for (int i=0; i<mBlocks.count(); i++) {
+        // HEADER
+        outBuffer.append((quint32)mBlocks[i].size());          // real size
+        outBuffer.append((quint32)compressedBlocks[i].size()); // compressed size
+        outBuffer.append((quint16)1);                          // mode
+        // Compressed resource
+        outBuffer.append(compressedBlocks[i]);
+    }
+    return outBuffer.buffer();
 }
 
 //-------------------------------------------------------------------------------------------
@@ -90,6 +119,11 @@ void HqrFile::readHqrBlock(int index)
     mBuffer.read(&realSize, 4);
     mBuffer.read(&compSize, 4);
     mBuffer.read(&mode, 2);
+
+    if (realSize == 0) {
+        mBlocks << QByteArray();
+        return;
+    }
 
     QByteArray block = mBuffer.readBlock(compSize);
     switch (mode) {
@@ -131,6 +165,8 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
                 *(dst++) = *(src++);
             }
             decompsize -= lenght;
+            if (decompsize < 0)
+                Q_ASSERT(0);
             Q_ASSERT(decompsize >= 0); // negative: ptr/dst are invalide pointers!
             if (decompsize == 0)
                 return outBuffer;
@@ -143,27 +179,56 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
 //-------------------------------------------------------------------------------------------
 QByteArray HqrFile::compressEntry(const QByteArray &inBuffer) const
 {
-    BinaryWriter writer;
+    BinaryWriter outBuffer;
+    BinaryWriter subBuffer;
 
-    // Write 8Bytes-Blocks
-    for (int bi=0; bi < inBuffer.size()/8; bi++) {
-        writer.append((quint8)0);   // 8Bits -> 8Bytes without compression
-        for (int sb=0; sb<8; sb++)
-            writer.append(inBuffer.at((bi*8) + sb));
+    const char *src = inBuffer.constData();
+    int compressLength = inBuffer.length();
+
+    quint8  nextBlock  = 0x01;
+    quint8  nextBlocks = 0x00;
+    quint16 offset;
+
+    while (compressLength > 0) {
+        qint32 nextLen = compressNextBlock(src,compressLength,outBuffer.buffer(),offset);
+        if (nextLen == 1) { // handle uncompressed byte
+            nextBlocks |= nextBlock;
+            subBuffer.append(*src);
+        } else {            // handle compressed block
+            Q_ASSERT(0 && "not implemented");
+        }
+        compressLength -= nextLen;
+        src += nextLen;
+        if (nextBlock == 0x80) { // bit 8: 10000000
+            nextBlocks |= nextBlock;
+            outBuffer.append(nextBlocks);
+            outBuffer.append(subBuffer.buffer());
+
+            // Reset:
+            nextBlock  = 0x01;
+            nextBlocks = 0x00;
+            subBuffer.clear();
+        } else {
+            nextBlock = nextBlock << 1;
+        }
     }
 
-    // Tail
-    qint8 tailSize = inBuffer.size() % 8;
-    if (tailSize == 0)
-        return writer.buffer();
-
-    qint8 tailFlag = 0xff;
-    for (int i=0; i<tailSize; i++)
-        tailFlag << 0;
-
-    writer.append(tailFlag);
-    for (int bi=0; bi < tailSize; bi++) {
-        writer.append(inBuffer.at((inBuffer.size()/8)*8 + bi));
+    // Handle tail:
+    if (subBuffer.size() > 0) {
+        nextBlocks |= nextBlock; // last unwritten block
+        while (nextBlock != 0x80) {
+            nextBlock = nextBlock << 1;
+            nextBlocks |= nextBlock;
+        }
+        outBuffer.append(nextBlocks);
+        outBuffer.append(subBuffer.buffer());
     }
-    return writer.buffer();
+
+    return outBuffer.buffer();
+}
+
+//-------------------------------------------------------------------------------------------
+qint32 HqrFile::compressNextBlock(const char *src, int size, const QByteArray &dictionary, quint16 &posInDictionary) const
+{
+    return 1;
 }

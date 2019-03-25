@@ -22,7 +22,7 @@ public:
 
     void  skip(int bytes);
 
-    QByteArray buffer() const;
+    const QByteArray &buffer() const;
 
 private:
     QByteArray    mBuffer;

@@ -46,7 +46,66 @@ void TestLiblbadata::testBinReader()
 //-------------------------------------------------------------------------------------------
 void TestLiblbadata::testHqrCompress()
 {
-    QVERIFY(true);
+
+    // 0 bytes
+    {
+        HqrFile inHqr;
+        inHqr.appendBlock(QByteArray("12345678",8));
+
+        HqrFile outHqr;
+        outHqr.fromBuffer(inHqr.toByteArray());
+
+        QVERIFY(inHqr.count() == outHqr.count());
+        QVERIFY(inHqr.block(0) == outHqr.block(0));
+    }
+
+    // exact 8 bytes
+    {
+        HqrFile inHqr;
+        inHqr.appendBlock(QByteArray("12345678",8));
+
+        HqrFile outHqr;
+        outHqr.fromBuffer(inHqr.toByteArray());
+
+        QVERIFY(inHqr.count() == outHqr.count());
+        QVERIFY(inHqr.block(0) == outHqr.block(0));
+    }
+
+
+    // Test Random Data 0 byte - 20'000 bytes
+    {
+        QByteArray nextTestString;
+        do {
+            HqrFile inHqr;
+            inHqr.appendBlock(nextTestString);
+
+            HqrFile outHqr;
+            outHqr.fromBuffer(inHqr.toByteArray());
+
+            QVERIFY(inHqr.count() == outHqr.count());
+            QVERIFY(inHqr.block(0) == outHqr.block(0));
+            nextTestString += (char)(qrand() % 256);
+        } while (nextTestString.size() < 20000);
+    }
+
+    // Test easy compressable data 0 byte - 20'000 bytes
+    {
+        QByteArray nextTestString;
+        do {
+            HqrFile inHqr;
+            inHqr.appendBlock(nextTestString);
+
+            HqrFile outHqr;
+            outHqr.fromBuffer(inHqr.toByteArray());
+
+            QVERIFY(inHqr.count() == outHqr.count());
+            QVERIFY(inHqr.block(0) == outHqr.block(0));
+            nextTestString += 'X';
+        } while (nextTestString.size() < 20000);
+    }
+
+
+
 }
 
 //-------------------------------------------------------------------------------------------

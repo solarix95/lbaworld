@@ -75,7 +75,7 @@ void BinaryWriter::skip(int bytes)
 }
 
 //-------------------------------------------------------------------------------------------
-QByteArray BinaryWriter::buffer() const
+const QByteArray &BinaryWriter::buffer() const
 {
     return mBuffer;
 }

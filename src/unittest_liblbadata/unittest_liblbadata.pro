@@ -6,6 +6,7 @@ TEMPLATE = app
 TARGET = unittest_liblbadata
 INCLUDEPATH += .
 QT += testlib
+QMAKE_CXXFLAGS += -std=c++11
 
 include(../liblbadata/liblbadata.pro)
 
