@@ -85,7 +85,7 @@ void TestLiblbadata::testHqrCompress()
             QVERIFY(inHqr.count() == outHqr.count());
             QVERIFY(inHqr.block(0) == outHqr.block(0));
             nextTestString += (char)(qrand() % 256);
-        } while (nextTestString.size() < 20000);
+        } while (nextTestString.size() < 100);
     }
 
     // Test easy compressable data 0 byte - 20'000 bytes
@@ -96,12 +96,17 @@ void TestLiblbadata::testHqrCompress()
             inHqr.appendBlock(nextTestString);
 
             HqrFile outHqr;
+
+            if (nextTestString.size() == 120)
+                qDebug() << "X";
             outHqr.fromBuffer(inHqr.toByteArray());
 
             QVERIFY(inHqr.count() == outHqr.count());
+            if (inHqr.block(0) != outHqr.block(0))
+                qWarning() << "at" << nextTestString.size();
             QVERIFY(inHqr.block(0) == outHqr.block(0));
             nextTestString += 'X';
-        } while (nextTestString.size() < 20000);
+        } while (nextTestString.size() < 2000);
     }
 
 

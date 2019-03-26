@@ -50,8 +50,9 @@ QByteArray HqrFile::toByteArray() const
         return QByteArray();
 
     QList<QByteArray> compressedBlocks;
+    const int mode = 1;
     for (int i=0; i<mBlocks.count(); i++) {
-        compressedBlocks << compressEntry(mBlocks[i]);
+        compressedBlocks << compressEntry(mBlocks[i], mode);
     }
 
     Q_ASSERT(compressedBlocks.size() == mBlocks.size());
@@ -77,7 +78,7 @@ QByteArray HqrFile::toByteArray() const
         // HEADER
         outBuffer.append((quint32)mBlocks[i].size());          // real size
         outBuffer.append((quint32)compressedBlocks[i].size()); // compressed size
-        outBuffer.append((quint16)1);                          // mode
+        outBuffer.append((quint16)mode);                       // mode
         // Compressed resource
         outBuffer.append(compressedBlocks[i]);
     }
@@ -154,10 +155,16 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
         b = *(src++);
         for (d = 0; d < 8; d++) {
             if (!(b & (1 << d))) {
+
+                //     8Bits +   8Bits
+                //  0000 0000  0000 0000
+                //|  Distance      | length
+                //     3x4bits     |  1x4Bits
                 offset = *(quint16*)(src);
                 src += 2;
                 lenght = (offset & 0x0F) + (mode + 1);
-                ptr = dst - (offset >> 4) - 1;
+                // qDebug() << "Distance" << (offset >> 4);
+                ptr    = dst - (offset >> 4) - 1;
                 for (i = 0; i < lenght; i++)
                     *(dst++) = *(ptr++);
             } else {
@@ -177,25 +184,93 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
 }
 
 //-------------------------------------------------------------------------------------------
-QByteArray HqrFile::compressEntry(const QByteArray &inBuffer) const
+qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const
+{
+    // Lets find a position between "src" and "pos":
+    //  * string "pos" + len
+    //  * maximum distance to "pos": 0xFFF (we only have 3 bytes for distance)
+    //  * maximum length: 0xF + mode + 1
+    //  * minimum length: 3 (2 bytes for compression metadata, with 3 bytes we win..)
+
+    if ((pos - src) < 8) // no compression if we have less than 8 bytes "dictionary"
+        return 1;
+
+    if (len < 3)         // needle to small.. better no compression
+        return 1;
+
+    const char *bestPos    = NULL;
+    int         bestLength = 0;
+    const char *nextPos    = pos - 3;
+    int         maxCompareLength;
+    int         maxCompressionLength = 0xF + mode + 1;
+    int         cl; // "current length
+    while (nextPos >= src) {
+
+        maxCompareLength = pos - nextPos;
+        if (len < maxCompareLength)
+            maxCompareLength = len;
+        if (len < maxCompareLength)
+            maxCompareLength = len;
+        if (maxCompressionLength < maxCompareLength)
+            maxCompareLength = maxCompressionLength;
+        for (cl = 3; cl <= maxCompareLength; cl++) {
+            if (!memcmp(nextPos,pos,cl)) {
+                if (cl > bestLength) {
+                    bestLength = cl;
+                    bestPos    = nextPos;
+                }
+            }
+        }
+
+        if (bestLength == maxCompressionLength) // found biggest possible block!
+            break;
+
+        nextPos--;
+
+        if ((nextPos - src) > 0xFFF) // reach max distance
+            break;
+    }
+
+    if (!bestLength)
+        return 1;
+
+    distance = pos - bestPos;
+
+    /*
+    qDebug() << "Compressed String";
+    for (int i=0; i< (qMin(bestLength,5)); i++) {
+        qDebug() << (int)(*(bestPos+i));
+    }
+    */
+
+    return bestLength;
+}
+
+//-------------------------------------------------------------------------------------------
+QByteArray HqrFile::compressEntry(const QByteArray &inBuffer, qint32 mode) const
 {
     BinaryWriter outBuffer;
     BinaryWriter subBuffer;
 
-    const char *src = inBuffer.constData();
+    const char *src      = inBuffer.constData();
+    const char *srcStart = inBuffer.constData();
     int compressLength = inBuffer.length();
 
     quint8  nextBlock  = 0x01;
     quint8  nextBlocks = 0x00;
     quint16 offset;
+    quint16 distance;
 
     while (compressLength > 0) {
-        qint32 nextLen = compressNextBlock(src,compressLength,outBuffer.buffer(),offset);
+        qint32 nextLen = compressNextBlock(srcStart,src,compressLength,mode, distance);
         if (nextLen == 1) { // handle uncompressed byte
             nextBlocks |= nextBlock;
             subBuffer.append(*src);
         } else {            // handle compressed block
-            Q_ASSERT(0 && "not implemented");
+            offset = nextLen - mode - 1;
+            Q_ASSERT(offset <= 0x0F);
+            offset |= ((distance-1) << 4);
+            subBuffer.append(offset);
         }
         compressLength -= nextLen;
         src += nextLen;
@@ -227,8 +302,3 @@ QByteArray HqrFile::compressEntry(const QByteArray &inBuffer) const
     return outBuffer.buffer();
 }
 
-//-------------------------------------------------------------------------------------------
-qint32 HqrFile::compressNextBlock(const char *src, int size, const QByteArray &dictionary, quint16 &posInDictionary) const
-{
-    return 1;
-}

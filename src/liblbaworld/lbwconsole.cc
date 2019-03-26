@@ -114,7 +114,7 @@ QStringList LbwConsole::split(const QString &input)
         QChar next = input[pos];
         switch (state) {
         case Undef:
-            if (next == "\"")
+            if (next == '\"')
                 state = InEscapedString;
             else if (next.isSpace()); // skip spaces
             else {
@@ -131,19 +131,19 @@ QStringList LbwConsole::split(const QString &input)
             else nextToken += next;
             break;
         case InEscapedString: {
-            if (next == "\\") {
+            if (next == '\\') {
                 QChar nextNext = pos < input.length()-1 ? input[pos+1] : QChar();
 
-                if (nextNext == "\"") { // x\"x -> x"x
+                if (nextNext == '\"') { // x\"x -> x"x
                     nextToken += "\"";
                     pos++; // skip two characters total
-                } else if (nextNext == "\\"){
+                } else if (nextNext == '\\'){
                     nextToken += "\\";
                     pos++; // skip two characters total
                 } else {
                     // Unknown escape Sequence
                 }
-            } else if (next == "\"") {
+            } else if (next == '\"') {
                 ret << nextToken;
                 nextToken.clear();
                 state = Undef;
