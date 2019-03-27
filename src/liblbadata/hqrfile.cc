@@ -189,7 +189,7 @@ QByteArray HqrFile::decompressEntry(const QByteArray &inBuffer, qint32 decompsiz
 }
 
 //-------------------------------------------------------------------------------------------
-qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const
+qint32 HqrFile::findThisBlockNearPosition(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const
 {
     // Lets find a position between "src" and "pos":
     //  * string "pos" + len
@@ -266,7 +266,7 @@ QByteArray HqrFile::compressEntry(const QByteArray &inBuffer, qint32 mode) const
     quint16 distance;
 
     while (compressLength > 0) {
-        qint32 nextLen = compressNextBlock(srcStart,src,compressLength,mode, distance);
+        qint32 nextLen = findThisBlockNearPosition(srcStart,src,compressLength,mode, distance);
         if (nextLen == 1) { // handle uncompressed byte
             nextBlocks |= nextBlock;
             subBuffer.append(*src);

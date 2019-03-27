@@ -25,7 +25,7 @@ private:
 
      QByteArray decompressEntry(const QByteArray &inBuffer, qint32 decompsize, qint32 mode);
      QByteArray compressEntry(const QByteArray &inBuffer, qint32 mode) const;
-     qint32     compressNextBlock(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const;
+     qint32     findThisBlockNearPosition(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const;
 
      BinaryReader      mBuffer;
      QList<QByteArray> mBlocks;

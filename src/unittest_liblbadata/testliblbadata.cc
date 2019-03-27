@@ -124,15 +124,15 @@ void TestLiblbadata::testHqrCompress()
     {
         QByteArray testString;
         do {
-           testString += (char)(qrand() % 3);
-        } while (testString.size() < 5000000);  // 5Megs
+           testString += (char)(qrand() % 2);
+        } while (testString.size() < 2000000);  // 5Megs
 
         HqrFile inHqr;
         inHqr.appendBlock(testString);
 
         HqrFile outHqr;
         QByteArray compressedHqrBuffer = inHqr.toByteArray(2);
-        qDebug() << "Compressed to" << 100*(compressedHqrBuffer.size()/(double)testString.size()) << "%";
+        // qDebug() << "Compressed to" << 100*(compressedHqrBuffer.size()/(double)testString.size()) << "%";
         outHqr.fromBuffer(compressedHqrBuffer);
 
         QVERIFY(inHqr.count() == outHqr.count());
