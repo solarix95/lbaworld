@@ -71,7 +71,6 @@ void TestLiblbadata::testHqrCompress()
         QVERIFY(inHqr.block(0) == outHqr.block(0));
     }
 
-
     // Test Random Data 0 byte - 20'000 bytes
     {
         QByteArray nextTestString;
@@ -85,7 +84,7 @@ void TestLiblbadata::testHqrCompress()
             QVERIFY(inHqr.count() == outHqr.count());
             QVERIFY(inHqr.block(0) == outHqr.block(0));
             nextTestString += (char)(qrand() % 256);
-        } while (nextTestString.size() < 100);
+        } while (nextTestString.size() < 500);
     }
 
     // Test easy compressable data 0 byte - 20'000 bytes
@@ -96,21 +95,49 @@ void TestLiblbadata::testHqrCompress()
             inHqr.appendBlock(nextTestString);
 
             HqrFile outHqr;
-
-            if (nextTestString.size() == 120)
-                qDebug() << "X";
             outHqr.fromBuffer(inHqr.toByteArray());
 
             QVERIFY(inHqr.count() == outHqr.count());
-            if (inHqr.block(0) != outHqr.block(0))
-                qWarning() << "at" << nextTestString.size();
             QVERIFY(inHqr.block(0) == outHqr.block(0));
+
             nextTestString += 'X';
         } while (nextTestString.size() < 2000);
     }
 
+    // Big File with maximum compressable data
+    {
+        QByteArray testString(5000000,'X');
 
+        HqrFile inHqr;
+        inHqr.appendBlock(testString);
 
+        HqrFile outHqr;
+        QByteArray compressedHqrBuffer = inHqr.toByteArray(2);
+        // qDebug() << "Compressed to" << 100*(compressedHqrBuffer.size()/(double)testString.size()) << "%";
+        outHqr.fromBuffer(compressedHqrBuffer);
+
+        QVERIFY(inHqr.count() == outHqr.count());
+        QVERIFY(inHqr.block(0) == outHqr.block(0));
+    }
+
+    // Big File with (compressable) random data
+    {
+        QByteArray testString;
+        do {
+           testString += (char)(qrand() % 3);
+        } while (testString.size() < 5000000);  // 5Megs
+
+        HqrFile inHqr;
+        inHqr.appendBlock(testString);
+
+        HqrFile outHqr;
+        QByteArray compressedHqrBuffer = inHqr.toByteArray(2);
+        qDebug() << "Compressed to" << 100*(compressedHqrBuffer.size()/(double)testString.size()) << "%";
+        outHqr.fromBuffer(compressedHqrBuffer);
+
+        QVERIFY(inHqr.count() == outHqr.count());
+        QVERIFY(inHqr.block(0) == outHqr.block(0));
+    }
 }
 
 //-------------------------------------------------------------------------------------------

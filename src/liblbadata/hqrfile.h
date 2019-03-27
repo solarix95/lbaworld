@@ -14,7 +14,7 @@ public:
 
      bool       fromFile(const QString &filename);
      bool       fromBuffer(const QByteArray &buffer);
-     QByteArray toByteArray() const;
+     QByteArray toByteArray(int mode = 1) const;
      int        count() const;
 
      const QByteArray &block(int index) const;

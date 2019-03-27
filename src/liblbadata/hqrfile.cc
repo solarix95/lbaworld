@@ -44,13 +44,15 @@ bool HqrFile::fromBuffer(const QByteArray &buffer)
 }
 
 //-------------------------------------------------------------------------------------------
-QByteArray HqrFile::toByteArray() const
+QByteArray HqrFile::toByteArray(int mode) const
 {
     if (mBlocks.isEmpty())
         return QByteArray();
 
+    if (mode <= 0 || mode > 5) // invalid modes are set to 1
+        mode = 1;
+
     QList<QByteArray> compressedBlocks;
-    const int mode = 1;
     for (int i=0; i<mBlocks.count(); i++) {
         compressedBlocks << compressEntry(mBlocks[i], mode);
     }
@@ -129,8 +131,11 @@ void HqrFile::readHqrBlock(int index)
     QByteArray block = mBuffer.readBlock(compSize);
     switch (mode) {
       case 0 : break;
-      case 1 : block = decompressEntry(block,realSize,mode); break;
-      case 2 : block = decompressEntry(block,realSize,mode); break;
+      case 1 : block = decompressEntry(block,realSize,mode); break; // Lba1
+      case 2 : block = decompressEntry(block,realSize,mode); break; // Lba1
+      case 3 : block = decompressEntry(block,realSize,mode); break; // Lbw
+      case 4 : block = decompressEntry(block,realSize,mode); break; // Lbw
+      case 5 : block = decompressEntry(block,realSize,mode); break; // Lbw
       default:
         qWarning() << "HqrFile::readHqrBlock" << index << mode;
     }
@@ -202,8 +207,13 @@ qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qin
     int         bestLength = 0;
     const char *nextPos    = pos - 3;
     int         maxCompareLength;
+    int         minCompressionLength = mode + 1;
     int         maxCompressionLength = 0xF + mode + 1;
     int         cl; // "current length
+
+    if (len < minCompressionLength)
+        return 1;
+
     while (nextPos >= src) {
 
         maxCompareLength = pos - nextPos;
@@ -213,7 +223,7 @@ qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qin
             maxCompareLength = len;
         if (maxCompressionLength < maxCompareLength)
             maxCompareLength = maxCompressionLength;
-        for (cl = 3; cl <= maxCompareLength; cl++) {
+        for (cl = minCompressionLength; cl <= maxCompareLength; cl++) {
             if (!memcmp(nextPos,pos,cl)) {
                 if (cl > bestLength) {
                     bestLength = cl;
@@ -225,9 +235,9 @@ qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qin
         if (bestLength == maxCompressionLength) // found biggest possible block!
             break;
 
-        nextPos--;
+        nextPos -= 1;
 
-        if ((nextPos - src) > 0xFFF) // reach max distance
+        if ((pos - nextPos) > 0xFFF) // reach max distance
             break;
     }
 
@@ -235,13 +245,7 @@ qint32 HqrFile::compressNextBlock(const char *src, const char *pos, int len, qin
         return 1;
 
     distance = pos - bestPos;
-
-    /*
-    qDebug() << "Compressed String";
-    for (int i=0; i< (qMin(bestLength,5)); i++) {
-        qDebug() << (int)(*(bestPos+i));
-    }
-    */
+    Q_ASSERT(distance <= 0xFFF);
 
     return bestLength;
 }
@@ -275,7 +279,6 @@ QByteArray HqrFile::compressEntry(const QByteArray &inBuffer, qint32 mode) const
         compressLength -= nextLen;
         src += nextLen;
         if (nextBlock == 0x80) { // bit 8: 10000000
-            nextBlocks |= nextBlock;
             outBuffer.append(nextBlocks);
             outBuffer.append(subBuffer.buffer());
 

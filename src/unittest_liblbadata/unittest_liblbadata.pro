@@ -7,6 +7,7 @@ TARGET = unittest_liblbadata
 INCLUDEPATH += .
 QT += testlib
 QMAKE_CXXFLAGS += -std=c++11
+CONFIG += debug
 
 include(../liblbadata/liblbadata.pro)
 
