@@ -12,6 +12,7 @@ public:
      HqrFile(const QString &filename = "");
      virtual ~HqrFile();
 
+     void       setVerbose(bool v);
      bool       fromFile(const QString &filename);
      bool       fromBuffer(const QByteArray &buffer);
      QByteArray toByteArray(int mode = 1) const;
@@ -21,12 +22,13 @@ public:
      void  appendBlock(const QByteArray &inData);
 
 private:
-     void       readHqrBlock(int index);
+     bool       readHqrBlock(int index);
 
      QByteArray decompressEntry(const QByteArray &inBuffer, qint32 decompsize, qint32 mode);
      QByteArray compressEntry(const QByteArray &inBuffer, qint32 mode) const;
      qint32     findThisBlockNearPosition(const char *src, const char *pos, int len, qint32 mode, quint16 &distance) const;
 
+     bool              mVerbose;
      BinaryReader      mBuffer;
      QList<QByteArray> mBlocks;
 };

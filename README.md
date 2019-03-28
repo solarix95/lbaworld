@@ -5,9 +5,11 @@ C++/Qt-based Toolchain for LBA1 + LBA2 (Little Big Adventure, Adeline Software, 
 
 Features
 ---------
-1) Utility "flaplayer": Viewer for LBA1 cinematics (*.FLA)
-2) Utility "lbaspriteviewer": LBA1/LBA2 2D-Sprite viewer (SPRITES.HQR + SPRITRAW.HQR)
-3) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
+1) CLI-Utility "hqrpak": extract or create HQR (HighQualityResource) files 
+2) Utility "flaplayer": Viewer for LBA1 cinematics (*.FLA)
+3) Utility "lbaspriteviewer": LBA1/LBA2 2D-Sprite viewer (SPRITES.HQR + SPRITRAW.HQR)
+4) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
+5) Game-Engine "lbaworld": LBA-based games (WIP)
 
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/flaplayer.png)
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/modelviewer.png)

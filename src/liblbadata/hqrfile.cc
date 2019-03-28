@@ -1,9 +1,24 @@
 #include <QDebug>
 #include <QFile>
+#include <iostream>
 #include "hqrfile.h"
+
+#define VERBOSE_COUT(s)   if (mVerbose) std::cout << s << std::endl
+
+//-------------------------------------------------------------------------------------------
+inline int memcmp2max(const char *str1, const char *str2, int maxLength)
+{
+    for (int i=0; i<maxLength; i++) {
+        if (str1[i] != str2[i])
+            return i-1;
+    }
+
+    return maxLength;
+}
 
 //-------------------------------------------------------------------------------------------
 HqrFile::HqrFile(const QString &filename)
+ : mVerbose(false)
 {
     if (!filename.isEmpty())
         fromFile(filename);
@@ -12,6 +27,12 @@ HqrFile::HqrFile(const QString &filename)
 //-------------------------------------------------------------------------------------------
 HqrFile::~HqrFile()
 {
+}
+
+//-------------------------------------------------------------------------------------------
+void HqrFile::setVerbose(bool v)
+{
+    mVerbose = v;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -37,9 +58,17 @@ bool HqrFile::fromBuffer(const QByteArray &buffer)
     mBuffer.read(&headerSize,4);
 
     mBlocks.clear();
-    for (int i=0; i<((int)headerSize/4); i++)
-        readHqrBlock(i);
+    for (int i=0; i<((int)headerSize/4); i++) {
+        if (!readHqrBlock(i)) {
+                mBlocks.clear();
+                return false;
+        }
+    }
 
+    if (mBuffer.error()) {
+        mBlocks.clear();
+        return false;
+    }
     return true;
 }
 
@@ -54,6 +83,7 @@ QByteArray HqrFile::toByteArray(int mode) const
 
     QList<QByteArray> compressedBlocks;
     for (int i=0; i<mBlocks.count(); i++) {
+        VERBOSE_COUT("Compress entry " << i);
         compressedBlocks << compressEntry(mBlocks[i], mode);
     }
 
@@ -84,6 +114,17 @@ QByteArray HqrFile::toByteArray(int mode) const
         // Compressed resource
         outBuffer.append(compressedBlocks[i]);
     }
+
+    int totalSizeRaw = 0;
+    int totalSizeCompressed = 0;
+    for (int i=0; i<mBlocks.count(); i++) {
+        totalSizeRaw += mBlocks[i].size();
+        totalSizeCompressed += compressedBlocks[i].size();
+    }
+    if (totalSizeRaw > 0) { // DbZ
+        VERBOSE_COUT(mBlocks.size() << " entries compressed to " << (100*totalSizeCompressed/totalSizeRaw) << "%");
+    }
+
     return outBuffer.buffer();
 }
 
@@ -108,7 +149,7 @@ void HqrFile::appendBlock(const QByteArray &inData)
 }
 
 //-------------------------------------------------------------------------------------------
-void HqrFile::readHqrBlock(int index)
+bool HqrFile::readHqrBlock(int index)
 {
     quint32 offsetToData;
     quint32 realSize;
@@ -123,9 +164,12 @@ void HqrFile::readHqrBlock(int index)
     mBuffer.read(&compSize, 4);
     mBuffer.read(&mode, 2);
 
+    if (mBuffer.error())
+        return false;
+
     if (realSize == 0) {
         mBlocks << QByteArray();
-        return;
+        return true;
     }
 
     QByteArray block = mBuffer.readBlock(compSize);
@@ -137,10 +181,11 @@ void HqrFile::readHqrBlock(int index)
       case 4 : block = decompressEntry(block,realSize,mode); break; // Lbw
       case 5 : block = decompressEntry(block,realSize,mode); break; // Lbw
       default:
-        qWarning() << "HqrFile::readHqrBlock" << index << mode;
+        std::cerr << ">HqrFile::readHqrBlock Error at block " << index << ", invalid mode: " << mode << std::endl;
     }
 
     mBlocks << block;
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -223,6 +268,8 @@ qint32 HqrFile::findThisBlockNearPosition(const char *src, const char *pos, int 
             maxCompareLength = len;
         if (maxCompressionLength < maxCompareLength)
             maxCompareLength = maxCompressionLength;
+
+        /*
         for (cl = minCompressionLength; cl <= maxCompareLength; cl++) {
             if (!memcmp(nextPos,pos,cl)) {
                 if (cl > bestLength) {
@@ -231,6 +278,15 @@ qint32 HqrFile::findThisBlockNearPosition(const char *src, const char *pos, int 
                 }
             }
         }
+        */
+
+
+        cl = memcmp2max(nextPos,pos,maxCompareLength);
+        if (cl >= minCompressionLength && cl > bestLength) {
+            bestLength = cl;
+            bestPos    = nextPos;
+        }
+
 
         if (bestLength == maxCompressionLength) // found biggest possible block!
             break;
@@ -302,6 +358,11 @@ QByteArray HqrFile::compressEntry(const QByteArray &inBuffer, qint32 mode) const
         outBuffer.append(subBuffer.buffer());
     }
 
+    QByteArray ret = outBuffer.buffer();
+    if (ret.size() > 0) {
+        int ratio = (100*ret.size()/inBuffer.size());
+        VERBOSE_COUT(" ...done. New compressed size: " <<  ratio << "%" << (ratio > 100 ? " (I'm sorry...)":""));
+    }
     return outBuffer.buffer();
 }
 
