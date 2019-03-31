@@ -3,6 +3,7 @@
 #include "hqrfile.h"
 #include "binaryreader.h"
 #include "binarywriter.h"
+#include "lbapalette.h"
 
 //-------------------------------------------------------------------------------------------
 void TestLiblbadata::testBinWriter()
@@ -44,7 +45,7 @@ void TestLiblbadata::testBinReader()
 }
 
 //-------------------------------------------------------------------------------------------
-void TestLiblbadata::testHqrCompress()
+void TestLiblbadata::testHqrFile()
 {
 
     // 0 bytes
@@ -137,6 +138,31 @@ void TestLiblbadata::testHqrCompress()
 
         QVERIFY(inHqr.count() == outHqr.count());
         QVERIFY(inHqr.block(0) == outHqr.block(0));
+    }
+}
+
+//-------------------------------------------------------------------------------------------
+void TestLiblbadata::testLbaPalette()
+{
+    QVector<QRgb> palette(256);
+    for (int i=0; i<256; i++) {
+        palette[i] = QColor(i,qMin(i+1, 255), qMin(i+2, 255)).rgb();
+    }
+
+    LbaPalette in(palette);
+
+    // Lba-Buffer
+    {
+        LbaPalette lbaPal;
+        lbaPal.fromBuffer(in.toBuffer());
+        QVERIFY(palette == lbaPal.palette());
+    }
+
+    // Gimp-Buffer
+    {
+        LbaPalette gimpPal;
+        gimpPal.fromBuffer(in.toGimpPalette("test"));
+        QVERIFY(palette == gimpPal.palette());
     }
 }
 

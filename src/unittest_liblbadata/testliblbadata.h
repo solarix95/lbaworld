@@ -8,5 +8,7 @@ private slots:
     void testBinWriter();
     void testBinReader();
 
-    void testHqrCompress();
+    void testHqrFile();
+
+    void testLbaPalette();
 };

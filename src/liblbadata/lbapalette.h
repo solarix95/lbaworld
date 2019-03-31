@@ -9,11 +9,21 @@ class LbaPalette
 {
 public:
     LbaPalette(const QByteArray &buffer = QByteArray());
+    LbaPalette(const QVector<QRgb> &pal);
 
     bool fromBuffer(const QByteArray &buffer);
+    QByteArray toBuffer() const;
+
+    void setPalette(const QVector<QRgb> &pal);
     const QVector<QRgb> &palette() const;
 
+    QByteArray toGimpPalette(const QString &name) const;
+
+
 private:
+    bool fromLbaPalette(const QByteArray &buffer);
+    bool fromGimpPalette(const QByteArray &buffer);
+
     QVector<QRgb> mPalette;
 };
 
