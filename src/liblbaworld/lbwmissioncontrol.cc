@@ -167,12 +167,16 @@ void LbwMissionControl::showposter(const QStringList &args)
     LbaRess::Source  source;
     LbaRess::Content cont;
     QString          ident;
-    if (!LbaRess::fromUrl(args.first(),source, cont, ident))
+    if (!LbaRess::fromUrl(args.first(),source, cont, ident)) {
+
         return;
+    }
 
     LbaPalette pal;
-    if (!pal.fromBuffer(mRess.data(source,cont,ident.toInt())))
+    if (!pal.fromBuffer(mRess.data(source,cont,ident.toInt()))) {
+        emit log(QString("Invalid/unknown palette '%1'").arg(args.first()));
         return;
+    }
 
     if (!LbaRess::fromUrl(args.last(),source, cont, ident))
         return;
@@ -180,8 +184,10 @@ void LbwMissionControl::showposter(const QStringList &args)
     LbaSprite sprite(pal,mRess.data(source,cont,ident.toInt()),LbaSprite::AutoSprite);
 
     QImage img = sprite.image();
-    if (img.isNull())
+    if (img.isNull()) {
+        emit log(QString("Invalid/unknown image '%1'").arg(args.last()));
         return;
+    }
 
     mScreen->fadeTo(img);
 }

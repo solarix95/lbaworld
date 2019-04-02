@@ -2,6 +2,7 @@
 #include "binarywriter.h"
 #include <QTextStream>
 #include <QStringList>
+#include <QFile>
 
 #define GIMP_HEADER "GIMP Palette"
 
@@ -32,6 +33,15 @@ bool LbaPalette::fromBuffer(const QByteArray &buffer)
 }
 
 //-------------------------------------------------------------------------------------------
+bool LbaPalette::fromFile(const QString &filename)
+{
+    QFile f(filename);
+    if (!f.open(QIODevice::ReadOnly))
+        return false;
+    return fromBuffer(f.readAll());
+}
+
+//-------------------------------------------------------------------------------------------
 QByteArray LbaPalette::toBuffer() const
 {
     BinaryWriter ret;
@@ -59,6 +69,40 @@ void LbaPalette::setPalette(const QVector<QRgb> &pal)
 const QVector<QRgb> &LbaPalette::palette() const
 {
     return mPalette;
+}
+
+//-------------------------------------------------------------------------------------------
+int LbaPalette::nearestIndexOf(QRgb c) const
+{
+    int index    = -1;
+    int nearest  =  255+255+255;
+    int distance;
+    for (int i=0; i<mPalette.size(); i++) {
+        distance = abs(qRed(mPalette.at(i))   - qRed(c))   &&
+                   abs(qGreen(mPalette.at(i)) - qGreen(c)) &&
+                   abs(qBlue(mPalette.at(i))  - qBlue(c));
+        if (distance < nearest)
+            index = i;
+        if (distance == 0) // found exact color in table
+            return i;
+    }
+
+    return index;
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaPalette::toFile(const QString &filename) const
+{
+    QFile f(filename);
+    if (!f.open(QIODevice::WriteOnly))
+        return false;
+
+    if (filename.toLower().endsWith(".gpl"))
+        f.write(toGimpPalette(f.fileName()));
+    else
+        f.write(toBuffer());
+
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------

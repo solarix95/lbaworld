@@ -12,11 +12,15 @@ public:
     LbaPalette(const QVector<QRgb> &pal);
 
     bool fromBuffer(const QByteArray &buffer);
+    bool fromFile(const QString &filename);
     QByteArray toBuffer() const;
 
     void setPalette(const QVector<QRgb> &pal);
     const QVector<QRgb> &palette() const;
 
+    int  nearestIndexOf(QRgb c) const;
+
+    bool       toFile(const QString &filename) const;
     QByteArray toGimpPalette(const QString &name) const;
 
 

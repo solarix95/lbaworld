@@ -32,7 +32,7 @@ LbaSpritePlayer::~LbaSpritePlayer()
 void LbaSpritePlayer::showSprite()
 {
     int index = ui->spbIndex->value();
-    LbaRess::Source source   = ui->btnLba1->isChecked() ? LbaRess::LBA1 : LbaRess::LBA2;
+    LbaRess::Source source   = ui->btnLba1->isChecked() ? LbaRess::LBA1 : ui->btnLba2->isChecked() ? LbaRess::LBA2 : LbaRess::LBAW;
     LbaRess::Content content = ui->btnSprites->isChecked() ? LbaRess::Sprites : LbaRess::SpritesRaw;
     content = ui->btnRess->isChecked() ? LbaRess::Ress : content;
 
@@ -45,15 +45,16 @@ void LbaSpritePlayer::showSprite()
     LbaSprite::Type spriteType;
 
     switch(content) {
-    case LbaRess::Sprites:    spriteType = LbaSprite::Sprite; break;
+    case LbaRess::Sprites:    spriteType = LbaSprite::Sprite;    break;
     case LbaRess::SpritesRaw: spriteType = LbaSprite::RawSprite; break;
-    case LbaRess::Ress:        spriteType = LbaSprite::Image; break;
+    case LbaRess::Ress:       spriteType = LbaSprite::Image;     break;
     }
 
     LbaSprite sprite(pal,mLbaRess.data(source,content,index), spriteType);
 
     QImage img = sprite.image();
 
+    ui->lblResolution->setText(QString("%1x%2").arg(img.rect().width()).arg(img.rect().height()));
     if (img.width() < 200)
         img = img.scaled(QSize(200,200),Qt::KeepAspectRatio);
     ui->lblSprite->setPixmap(QPixmap::fromImage(img));

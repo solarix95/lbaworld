@@ -1,8 +1,15 @@
 #include <QDebug>
 #include <QImage>
+#include <QFile>
 #include <math.h>
 #include "lbasprite.h"
 #include "binaryreader.h"
+#include "binarywriter.h"
+
+//-------------------------------------------------------------------------------------------
+LbaSprite::LbaSprite()
+{
+}
 
 //-------------------------------------------------------------------------------------------
 LbaSprite::LbaSprite(const LbaPalette &pal, const QByteArray &buffer, LbaSprite::Type spriteType )
@@ -56,6 +63,39 @@ bool LbaSprite::fromImageBuffer(const QByteArray &buffer)
     }
 
     return true;
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaSprite::fromFile(const QString &filename, const LbaPalette &pal)
+{
+    QFile f(filename);
+    if (!f.open(QIODevice::ReadOnly))
+        return false;
+
+    QByteArray imageData = f.readAll();
+    mImage = QImage::fromData(imageData); // png? jpg? gif? bmp?
+    if (!mImage.isNull())
+        return true;
+
+    LbaSprite importer(pal,imageData,LbaSprite::AutoSprite);
+    mImage = importer.image();
+
+    return !mImage.isNull();
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaSprite::toFile(const QString &filename, const LbaPalette &pal) const
+{
+    if (mImage.isNull())
+        return false;
+
+    if (pal.palette().isEmpty())
+        return false;
+
+    if (filename.toLower().endsWith(".png") || filename.toLower().endsWith(".jpg"))
+        return mImage.save(filename,0,100);
+
+    return toLbaImageFile(filename,pal);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -129,24 +169,6 @@ bool LbaSprite::fromSpriteBuffer(const QByteArray &buffer)
 bool LbaSprite::fromRawSpriteBuffer(const QByteArray &buffer)
 {
     // https://github.com/agrande/lba2remake/blob/master/src/iso/sprites.js
-
-    /*
- const dataView = new DataView(sprites.getEntry(entry));
-    const width = dataView.getUint8(8);
-    const height = dataView.getUint8(9);
-    const buffer = new ArrayBuffer(width * height);
-    const pixels = new Uint8Array(buffer);
-    let ptr = 12;
-    for (let y = 0; y < height; y += 1) {
-        let x = 0;
-        const offset = () => (y * width) + x;
-        for (let run = 0; run < width; run += 1) {
-            pixels[offset()] = dataView.getUint8(ptr);
-            ptr += 1;
-            x += 1;
-        }
-}
-    */
     mImage = QImage();
     BinaryReader reader(buffer);
     reader.skip(8);
@@ -182,5 +204,40 @@ bool LbaSprite::fromRawSpriteBuffer(const QByteArray &buffer)
 const QImage &LbaSprite::image() const
 {
     return mImage;
+}
+
+//-------------------------------------------------------------------------------------------
+bool LbaSprite::toLbaImageFile(const QString &filename, const LbaPalette &pal) const
+{
+    if (!(((mImage.width() == 640) && (mImage.height() == 480)) || (mImage.width() == mImage.height())))
+        return false;
+
+    QByteArray imgData = img2Buffer(pal);
+    if (imgData.isEmpty())
+        return false;
+
+    QFile f(filename);
+    if (!f.open(QIODevice::WriteOnly)) {
+        return false;
+    }
+
+    f.write(imgData);
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------
+QByteArray LbaSprite::img2Buffer(const LbaPalette &pal) const
+{
+    BinaryWriter writer;
+    for (int y=0; y<mImage.height(); y++) {
+        for (int x=0; x<mImage.width(); x++) {
+            int colorIndex = pal.nearestIndexOf(mImage.pixel(x,y));
+            Q_ASSERT(colorIndex >= 0);
+            Q_ASSERT(colorIndex <  256);
+            writer.append((quint8)colorIndex);
+        }
+    }
+
+    return writer.buffer();
 }
 

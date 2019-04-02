@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = hqrpak
+TARGET = png2rawimage
 INCLUDEPATH += .
 QMAKE_CXXFLAGS += -std=c++11
 CONFIG += debug

@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = hqrpak
+TARGET = pal2gimp
 INCLUDEPATH += .
 QMAKE_CXXFLAGS += -std=c++11
 CONFIG += debug
