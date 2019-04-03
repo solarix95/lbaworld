@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&player, SIGNAL(stopAudio()), &audio, SLOT(stop()));
 
+    audio.init();
     player.show();
     player.initFromCli();
 
