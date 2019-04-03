@@ -78,8 +78,8 @@ int LbaPalette::nearestIndexOf(QRgb c) const
     int nearest  =  255+255+255;
     int distance;
     for (int i=0; i<mPalette.size(); i++) {
-        distance = abs(qRed(mPalette.at(i))   - qRed(c))   &&
-                   abs(qGreen(mPalette.at(i)) - qGreen(c)) &&
+        distance = abs(qRed(mPalette.at(i))   - qRed(c))   +
+                   abs(qGreen(mPalette.at(i)) - qGreen(c)) +
                    abs(qBlue(mPalette.at(i))  - qBlue(c));
         if (distance < nearest)
             index = i;

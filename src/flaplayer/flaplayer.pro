@@ -7,6 +7,9 @@ TARGET = flaplayer
 INCLUDEPATH += .
 QT          += widgets
 CONFIG      += debug
+QMAKE_CXXFLAGS += -std=c++11
+DESTDIR     = ../../bin
+
 
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)
