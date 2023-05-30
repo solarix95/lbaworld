@@ -20,6 +20,9 @@ public:
 
     struct KeyFrame {
         int               keyFrameLength; // Time? in.. ? [ms] ?
+        float             velocityX;
+        float             velocityY;
+        float             velocityZ;
         SimpleBones       bones;
     };
     typedef QList<KeyFrame> KeyFrames;

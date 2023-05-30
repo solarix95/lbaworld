@@ -153,6 +153,10 @@ void LbaRess::processDir(const QString &dirName, Source source)
 
     dir.setFilter(QDir::Files);
 
+    QStringList filters;
+    filters << "*.hqr" << "*.fla" << "*.mp3" << "*.ogg" << "*.wav";
+    dir.setNameFilters(filters);
+
     QFileInfoList list = dir.entryInfoList();
 
     processFiles(list, source);

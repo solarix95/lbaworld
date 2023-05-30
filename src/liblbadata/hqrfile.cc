@@ -59,17 +59,16 @@ bool HqrFile::fromBuffer(const QByteArray &buffer)
 
     mBlocks.clear();
     for (int i=0; i<((int)headerSize/4); i++) {
-        if (!readHqrBlock(i)) {
-                mBlocks.clear();
-                return false;
-        }
+        if (!readHqrBlock(i))
+            mBlocks << QByteArray(); // keep invalid/blank entries. keep original game indexes (http://lbafileinfo.kazekr.net/index.php?title=LBA1:Samples.hqr)
     }
 
     if (mBuffer.error()) {
         mBlocks.clear();
         return false;
     }
-    return true;
+
+    return !mBlocks.isEmpty();
 }
 
 //-------------------------------------------------------------------------------------------
@@ -158,6 +157,13 @@ bool HqrFile::readHqrBlock(int index)
 
     mBuffer.seek(index*4);
     mBuffer.read(&offsetToData, 4);
+
+    qDebug() << index << offsetToData << mBuffer.size();
+    if (offsetToData < (index*4) || offsetToData >= mBuffer.size()) {
+        std::cerr << ">HqrFile::readHqrBlock Error at block " << index << ", invalid offset: " << offsetToData << std::endl;
+        return false;
+    }
+
 
     mBuffer.seek(offsetToData);
     mBuffer.read(&realSize, 4);

@@ -38,6 +38,9 @@ bool LbaAnimation::fromBuffer(const QByteArray &buffer)
         reader.read(&velocityX,2);
         reader.read(&velocityY,2);
         reader.read(&velocityZ,2);
+        f.velocityX = velocityX/(float)0x400;
+        f.velocityY = velocityY/(float)0x400;
+        f.velocityZ = velocityZ/(float)0x400;
 
         for (int b=0; b<numOfBones; b++) {
             quint16 flags;
