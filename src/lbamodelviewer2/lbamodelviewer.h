@@ -3,6 +3,7 @@
 
 #include "ui_viewerform.h"
 #include <lbaress.h>
+#include <lbapalette.h>
 
 class LbaBody;
 class LbaModelViewer : public QWidget
@@ -14,7 +15,11 @@ public:
 
 private slots:
     void loadModel();
-    void loadBody(LbaBody &body);
+    void loadBody(LbaBody &body, const LbaPalette &pal);
+    void loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal);
+    void loadBodySpheres(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal);
+    void loadBodyLines(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal);
+
 private:
     Ui::LbaModelUi mUi;
 

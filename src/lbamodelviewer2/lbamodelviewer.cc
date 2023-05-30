@@ -1,6 +1,8 @@
 #include <QtGlobal>
 #include <libqtr3d/qtr3dcamera.h>
 #include <libqtr3d/qtr3dmesh.h>
+#include <libqtr3d/qtr3dmodel.h>
+#include <libqtr3d/qtr3dfactory.h>
 
 #include "lbamodelviewer.h"
 #include <lbabody.h>
@@ -82,7 +84,7 @@ void LbaModelViewer::loadModel()
         body.fromLba2Buffer(modelData, pal, uvTexture.image());
     }
 
-    loadBody(body);
+    loadBody(body, pal);
 
     return;
 
@@ -107,9 +109,24 @@ void LbaModelViewer::loadModel()
     // mUi.openGLWidget->appendGeometryBuffer(body, ani,keyFrame, pal,flags);
 }
 
-void LbaModelViewer::loadBody(LbaBody &body)
+//-------------------------------------------------------------------------------------------------
+void LbaModelViewer::loadBody(LbaBody &body, const LbaPalette &pal)
 {
     body.translateVertices(0);
+    mUi.viewer->assets()->reset();
+
+    auto *model = mUi.viewer->createModel();
+    loadBodyMeshes(*model,body, pal);
+    loadBodySpheres(*model,body, pal);
+    loadBodyLines(*model,body, pal);
+
+    mUi.viewer->createState(model);
+    mUi.viewer->camera()->lookAt(QVector3D(3*model->radius(),2*model->radius(),3*model->radius()),model->center(),{0,1,0});
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal)
+{
     const auto &polygons = body.polygons();
     const auto &vertices = body.vertices();
     const auto &normals  = body.normals();
@@ -126,9 +143,8 @@ void LbaModelViewer::loadBody(LbaBody &body)
     if (!count)
         return;
 
-    mUi.viewer->assets()->reset();
     auto *mesh = mUi.viewer->createMesh();
-    mesh->startMesh(Qtr3d::Triangle);
+    mesh->startMesh(Qtr3d::Triangle, Qtr3d::CounterClockWise);
 
     int vindex = 0;
 
@@ -206,8 +222,71 @@ void LbaModelViewer::loadBody(LbaBody &body)
     Q_ASSERT(vindex == count);
 
     mesh->endMesh();
-    mUi.viewer->createState(mesh);
-    mUi.viewer->camera()->setPos(mesh->radius(),mesh->radius(),mesh->radius());
-    mUi.viewer->camera()->lookAt(QVector3D(3*mesh->radius(),2*mesh->radius(),3*mesh->radius()),{0,0,0},{0,1,0});
+    model.addMesh(mesh,true);
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbaModelViewer::loadBodySpheres(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal)
+{
+    const auto &spheres = body.spheres();
+
+    for (const auto &sphere: spheres) {
+        auto *mesh = mUi.viewer->createMesh();
+        Qtr3d::meshBySphere(*mesh, 15, pal.palette()[sphere.colorIndex]);
+
+        QMatrix4x4 transform;
+        transform.translate(body.vertices()[sphere.centerPoint].toVector()/800.0);
+        transform.scale(sphere.size/800.0);
+        model.createNode(mesh,transform);
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
+void LbaModelViewer::loadBodyLines(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal)
+{
+    const auto  &points   = body.vertices();
+    const auto  &lines    = body.lines();
+    int count = lines.count();
+
+    if (count <= 0)
+        return;
+
+    int vindex = 0;
+
+    auto *mesh = mUi.viewer->createMesh();
+    mesh->startMesh(Qtr3d::Line);
+
+    for (int i=0; i<lines.count(); i++) {
+        float f = 800;
+        QRgb colorP0 = body.polygonByPoint(lines[i].p0).color;
+
+        Qtr3dColoredVertex v;
+        v.p.x = points[lines[i].p0].x/f;
+        v.p.y = points[lines[i].p0].y/f;
+        v.p.z = points[lines[i].p0].z/f;
+
+        v.c.x = qRed(colorP0)/255.0;
+        v.c.y = qGreen(colorP0)/255.0;
+        v.c.z = qBlue(colorP0)/255.0;
+        mesh->addVertex(v);
+        vindex++;
+
+        QRgb colorP1 = body.polygonByPoint(lines[i].p1).color;
+
+        v.p.x = points[lines[i].p1].x/f;
+        v.p.y = points[lines[i].p1].y/f;
+        v.p.z = points[lines[i].p1].z/f;
+
+        v.c.x = qRed(colorP1)/255.0;
+        v.c.y = qGreen(colorP1)/255.0;
+        v.c.z = qBlue(colorP1)/255.0;
+        mesh->addVertex(v);
+        vindex++;
+    }
+
+    count *= 2;
+    Q_ASSERT(vindex == count);
+    mesh->endMesh();
+    model.addMesh(mesh,true);
 }
 
