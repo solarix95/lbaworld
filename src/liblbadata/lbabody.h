@@ -22,6 +22,8 @@ public:
 
         Vertex(float px, float py, float pz, int b = -1) : x(px), y(py), z(pz), boneId(b) {}
         Vertex(const Vertex &o) : x(o.x), y(o.y), z(o.z), boneId(o.boneId)  {}
+
+        QVector3D toVector() const { return QVector3D(x,y,z); }
     };
     typedef QList<Vertex>      Vertices;
 
@@ -31,6 +33,8 @@ public:
 
         Normal(float x, float y, float z, QRgb c = 0) : dx(x), dy(y), dz(z), color(c) {}
         Normal(const Normal &o) : dx(o.dx), dy(o.dy), dz(o.dz), color(o.color)  {}
+
+        QVector3D toVector() const { return QVector3D(dx,dy,dz); }
     };
     typedef QList<Normal>      Normals;
 

@@ -172,7 +172,7 @@ Name: ....
         }
         if (!inColorTable)
             continue;
-        QStringList rgb = line.split(" ",QString::SkipEmptyParts);
+        QStringList rgb = line.split(" ",Qt::SkipEmptyParts);
         if (rgb.count() != 3)
             return false;
         bool ok;
