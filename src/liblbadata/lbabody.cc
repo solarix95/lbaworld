@@ -180,6 +180,68 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &verti
         }
         translateVertices(nextBones[i].id,boneMatrix, vertices);
     }
+}
+
+//-----------------------------------------------------------------------------------------
+LbaBody::Vertices LbaBody::translatedVertices(int keyFrame)
+{
+    mAnimationKeyFrame = keyFrame;
+    Vertices tv = mVertices;
+
+    // QVector3D matrix(0,0,0);
+    QMatrix4x4 matrix;
+    translateVertices(-1,matrix, tv);
+
+    return tv;
+}
+
+//-----------------------------------------------------------------------------------------
+QVector<QMatrix4x4> LbaBody::boneAnimation() const
+{
+    QVector<QMatrix4x4> bones;
+
+    QMatrix4x4 firstParentMatrix;
+    boneAnimation(-1,firstParentMatrix, bones);
+
+    return bones;
+}
+
+//-----------------------------------------------------------------------------------------
+void LbaBody::boneAnimation(int parentId, const QMatrix4x4 &parentMatrix, QVector<QMatrix4x4> &bones) const
+{
+    Bones nextBones = childsOfBone(parentId);
+
+    for(int i=0; i<nextBones.count(); i++) {
+
+        QMatrix4x4 subMatrix;
+        subMatrix.translate( mVertices[nextBones[i].parentVertex].x,
+                mVertices[nextBones[i].parentVertex].y,
+                mVertices[nextBones[i].parentVertex].z);
+
+
+        QMatrix4x4 subMatrixAni;
+        if (nextBones[i].boneType == 0) {
+
+            if (nextBones[i].rotateZ)
+                subMatrixAni.rotate(nextBones[i].rotateZ,0,0,1);
+            if (nextBones[i].rotateY)
+                subMatrixAni.rotate(nextBones[i].rotateY,0,1,0);
+            if (nextBones[i].rotateX)
+                subMatrixAni.rotate(nextBones[i].rotateX,1,0,0);
+
+        } else {
+            subMatrixAni.translate( nextBones[i].rotateX/800.0,
+                                    nextBones[i].rotateY/800.0,
+                                    nextBones[i].rotateZ/800.0);
+        }
+
+        QMatrix4x4 boneMatrix = parentMatrix * subMatrix * subMatrixAni;
+        if (bones.count() < (nextBones[i].id+1))
+            bones.resize( nextBones[i].id + 1);
+        bones[nextBones[i].id] = boneMatrix;
+
+        boneAnimation(nextBones[i].id,boneMatrix, bones);
+    }
 
 }
 

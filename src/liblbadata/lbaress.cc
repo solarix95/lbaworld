@@ -9,7 +9,7 @@
 
 //-------------------------------------------------------------------------------------------------
 LbaRess::LbaRess()
- : mLbaRess(NULL), mLbaBodys(NULL), mLbaInventoryObjects(NULL), mLbaAnims(NULL), mLba3d(NULL), mLbaFlaSamples(NULL), mLbaSprites(NULL)
+ : mLbaRess(NULL), mLbaBodys(NULL), mLbaInventoryObjects(NULL), mLbaAnims(NULL), mLba3d(NULL), mLbaSprites(NULL), mLbaFlaSamples(NULL)
 {    
 }
 

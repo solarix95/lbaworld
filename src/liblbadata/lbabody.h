@@ -104,6 +104,9 @@ public:
 
     void translateVertices(int keyFrame = -1);
     void translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices);
+    Vertices translatedVertices(int keyFrame = -1);
+    QVector<QMatrix4x4>  boneAnimation() const;
+    void                 boneAnimation(int parentId, const QMatrix4x4 &parentMatrix, QVector<QMatrix4x4> &bones) const;
 
     const Vertices &vertices() const;
     const Normals  &normals() const;
@@ -151,5 +154,11 @@ private:
     Spheres   mSpheres;
     UvGroups  mUvGroups;
 };
+
+
+inline bool operator==(const LbaBody::Vertex& lhs, const LbaBody::Vertex& rhs)
+{
+    return (lhs.toVector() == rhs.toVector()) && lhs.boneId == rhs.boneId;
+}
 
 #endif // LBABODY_H
