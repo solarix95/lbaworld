@@ -173,6 +173,15 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &verti
             QVector4D vec(mVertices[vertexIndexes[v]].x,mVertices[vertexIndexes[v]].y,mVertices[vertexIndexes[v]].z,1);
             vec = boneMatrix * vec;
 
+            if (vertexIndexes[v] == 379)
+                qDebug() << "INIT first vertex";
+
+            if (vertexIndexes[v] == 380)
+                qDebug() << "INIT first vertex";
+
+            if (vertexIndexes[v] == 381)
+                qDebug() << "INIT first vertex";
+
             vertices[vertexIndexes[v]].x = vec.x();
             vertices[vertexIndexes[v]].y = vec.y();
             vertices[vertexIndexes[v]].z = vec.z();

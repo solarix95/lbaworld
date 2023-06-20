@@ -6,6 +6,8 @@
 #include <libqtr3d/qtr3dmodelanimation.h>
 #include <libqtr3d/qtr3dmodelanimator.h>
 #include <libqtr3d/qtr3dfactory.h>
+#include <libqtr3d/qtr3dlightsource.h>
+#include <libqtr3d/extras/qtr3dfreecameracontroller.h>
 
 #include "lbamodelviewer.h"
 #include <lbabody.h>
@@ -63,6 +65,8 @@ LbaModelViewer::LbaModelViewer(const LbaRess &ress)
         connect(mUi.chkBones,   &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
         connect(mUi.btnLba1,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
         connect(mUi.btnLba2,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
+
+         connect(new Qtr3dFreeCameraController(mUi.viewer), &Qtr3dFreeCameraController::positionChanged, mUi.viewer->primaryLightSource(), &Qtr3dLightSource::setPos);
     });
 }
 
@@ -211,23 +215,27 @@ void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, cons
 
     for (int i=0; i<polygons.count(); i++) {
         float f = 800;
-        if (polygons[i].vertices.count() == 3) {
+        if (polygons[i].vertices.count() >= 3) {
 
-            Qtr3dColoredVertex v;
-            initVertex(v,0, vertices, normals, polygons[i]);
-            vindex++;
-            mesh->addVertex(v);
+            for (int triangleIndex = 0; triangleIndex <= polygons[i].vertices.count()-3; triangleIndex++)
+            {
+                Qtr3dColoredVertex v;
+                initVertex(v,0, vertices, normals, polygons[i]);
+                vindex++;
+                mesh->addVertex(v);
 
-            initVertex(v,1, vertices, normals, polygons[i]);
-            vindex++;
-            mesh->addVertex(v);
+                initVertex(v,1+triangleIndex, vertices, normals, polygons[i]);
+                vindex++;
+                mesh->addVertex(v);
 
-            initVertex(v,2, vertices, normals, polygons[i]);
-            vindex++;
-            mesh->addVertex(v);
+                initVertex(v,2+triangleIndex, vertices, normals, polygons[i]);
+                vindex++;
+                mesh->addVertex(v);
+            }
         }
 
-        if (polygons[i].vertices.count() >= 4) {
+
+        if (0 && (polygons[i].vertices.count() >= 4)) {
 
             // Calculate center vertex
 
@@ -254,12 +262,19 @@ void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, cons
 
                 Qtr3dColoredVertex v;
                 initVertex(v,p, vertices, normals, polygons[i]);
+                int bone0 = v.bi[0];
                 vindex++;
                 mesh->addVertex(v);
+                if (mesh->vertexCount() == 387)
+                    qDebug() << "BLUB";
+
 
                 initVertex(v,sibling, vertices, normals, polygons[i]);
+                int bone1 = v.bi[0];
                 vindex++;
                 mesh->addVertex(v);
+                if (mesh->vertexCount() == 387)
+                    qDebug() << "BLUB";
 
                 v.p.x = cx/f;
                 v.p.y = cy/f;
@@ -270,17 +285,33 @@ void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, cons
                 v.n.z = cn.z();
                 v.n.normalize();
 
-                v.c.x = 3*qRed(  polygons[i].color)/255.0;
-                v.c.y = 3*qGreen(polygons[i].color)/255.0;
-                v.c.z = 3*qBlue( polygons[i].color)/255.0;
+                // v.c.x = // 3*qRed(  polygons[i].color)/255.0;
+                // v.c.y = // 3*qGreen(polygons[i].color)/255.0;
+                // v.c.z = // 3*qBlue( polygons[i].color)/255.0;
+
+                v.bi[0] = bone0; // mesh->vertex(mesh->vertexCount()-1).bi[0]; // vertices[polygons[i].vertices[0]].boneId;
+                v.bi[1] = -1;
+                v.bi[2] = -1;
+
+                v.bw[0] = 1.0;
+                v.bw[1] = 0;
+                v.bw[2] = 0;
+
+                if (bone1 != bone0) {
+                       v.bi[1] = bone1;
+                       v.bw[0] = 0.5;
+                       v.bw[1] = 0.5;
+                }
                 mesh->addVertex(v);
+                if (mesh->vertexCount() == 402)
+                    qDebug() << "BLUB";
                 vindex++;
             }
         }
     }
 
-    count *= 3;
-    Q_ASSERT(vindex == count);
+    // count *= 3;
+    // Q_ASSERT(vindex == count);
 
     mesh->endMesh();
     model.addMesh(mesh,false);
@@ -361,9 +392,9 @@ void LbaModelViewer::loadModelNodes(Qtr3dModel &model, Qtr3dMesh *mesh, const Lb
 
         QMatrix4x4 subMatrix;
         subMatrix.translate(
-                body.vertices()[nextBones[i].parentVertex].x,
-                body.vertices()[nextBones[i].parentVertex].y,
-                body.vertices()[nextBones[i].parentVertex].z);
+                body.vertices()[nextBones[i].parentVertex].x/800.0,
+                body.vertices()[nextBones[i].parentVertex].y/800.0,
+                body.vertices()[nextBones[i].parentVertex].z/800.0);
 
 
         QMatrix4x4 subMatrixAni;
