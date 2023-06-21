@@ -1,5 +1,7 @@
 #include <QtGlobal>
 #include <QCheckBox>
+#include <QQuaternion>
+#include <QTimer>
 #include <libqtr3d/qtr3dcamera.h>
 #include <libqtr3d/qtr3dmesh.h>
 #include <libqtr3d/qtr3dmodel.h>
@@ -8,7 +10,7 @@
 #include <libqtr3d/qtr3dfactory.h>
 #include <libqtr3d/qtr3dlightsource.h>
 #include <libqtr3d/extras/qtr3dfreecameracontroller.h>
-
+#include <libqtr3d/physics/qtr3dfpsloop.h>
 #include "lbamodelviewer.h"
 #include <lbabody.h>
 #include <lbasprite.h>
@@ -49,24 +51,32 @@ LbaModelViewer::LbaModelViewer(const LbaRess &ress)
 {
     mUi.setupUi(this);
 
+
     connect(mUi.viewer, &Qtr3dWidget::initialized, this, [this]() {
+
         connect(mUi.spbModel, SIGNAL(valueChanged(int)), this, SLOT(loadModel()));
         connect(mUi.chkAni, SIGNAL(clicked(bool)), this, SLOT(loadModel()));
-        connect(mUi.spbAniFrame, SIGNAL(valueChanged(int)), this, SLOT(loadModel()));
         connect(mUi.spbAniIndex, SIGNAL(valueChanged(int)), this, SLOT(loadModel()));
 
         connect(mUi.spbCamFoV,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() {
             mUi.viewer->camera()->setFov(mUi.spbCamFoV->value());
         });
 
-        connect(mUi.chkPolygon, &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
-        connect(mUi.chkLines,   &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
-        connect(mUi.chkSpheres, &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
-        connect(mUi.chkBones,   &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
+
         connect(mUi.btnLba1,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
         connect(mUi.btnLba2,    &QCheckBox::clicked, this, &LbaModelViewer::loadModel);
 
-         connect(new Qtr3dFreeCameraController(mUi.viewer), &Qtr3dFreeCameraController::positionChanged, mUi.viewer->primaryLightSource(), &Qtr3dLightSource::setPos);
+        connect(mUi.btnBlack,   &QRadioButton::clicked, this, &LbaModelViewer::setupViewerByUI);
+        connect(mUi.btnGrey,    &QRadioButton::clicked, this, &LbaModelViewer::setupViewerByUI);
+        connect(mUi.btnWhite,   &QRadioButton::clicked, this, &LbaModelViewer::setupViewerByUI);
+        connect(mUi.spbOffset,  static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &LbaModelViewer::setupViewerByUI);
+
+        connect(new Qtr3dFreeCameraController(mUi.viewer), &Qtr3dFreeCameraController::positionChanged, mUi.viewer->primaryLightSource(), &Qtr3dLightSource::setPos);
+
+        QTimer *t = new QTimer();
+        connect(t, &QTimer::timeout, mUi.viewer, [this]() { mUi.viewer->update();});
+        t->start(1000/25);
+
     });
 }
 
@@ -112,24 +122,7 @@ void LbaModelViewer::loadModel()
     // body.setAnimation(ani);
     // body.translateVertices(mUi.spbAniFrame->value());
 
-
     loadBody(body, pal, ani);
-
-    return;
-
-
-
-    int flags = 0;
-
-    // TODO: proper QFlags<>..
-    flags += mUi.chkPolygon->isChecked() ? 0x01 : 0;
-    flags += mUi.chkLines->isChecked() ?   0x02 : 0;
-    flags += mUi.chkSpheres->isChecked() ? 0x04 : 0;
-    flags += mUi.chkBones->isChecked() ?   0x08 : 0;
-
-
-    // mUi.openGLWidget->clearGeometryBuffers();
-    // mUi.openGLWidget->appendGeometryBuffer(body, ani,keyFrame, pal,flags);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -142,51 +135,20 @@ void LbaModelViewer::loadBody(LbaBody &body, const LbaPalette &pal, LbaAnimation
     // body.translateVertices();
     loadBodyMeshes(*model,body, pal); // LBA1 Skin + Qtr3d-Nodes
 
-    // loadBodySpheres(*model,body, pal);
+    loadBodySpheres(*model,body, pal);
     // loadBodyLines(*model,body, pal);
     loadBodyBones(*model,body);
     loadBodyAnimation(*model,body,animation);
 
     auto *state = mUi.viewer->createState(model);
 
-    if (!model->animations().isEmpty())
+    if (!model->animations().isEmpty()) {
         state->setAnimator(new Qtr3dModelAnimator(model->animationByName(model->animations().first())));
-
-    mUi.viewer->camera()->lookAt(QVector3D(3*model->radius(),2*model->radius(),3*model->radius()),model->center(),{0,1,0});
-
-    auto debugBones     = body.boneAnimation();
-    auto debugVertices1 = body.vertices();
-    auto debugVertices2 = body.translatedVertices();
-    body.translateVertices();
-    auto debugVertices3 = body.vertices();
-
-    qDebug() << (debugVertices1 == debugVertices2);
-    qDebug() << (debugVertices2 == debugVertices3);
-
-    qDebug() << debugVertices1.count() << debugVertices2.count() << debugBones.count();
-
-    for (auto &v : debugVertices1) {
-        QVector4D v4(v.x,v.y,v.z,1.0);
-        v4 = debugBones[v.boneId] * v4;
-        v.x = v4.x();
-        v.y = v4.y();
-        v.z = v4.z();
+        state->animator()->setLoop(true);
+        state->animator()->start();
     }
 
-    qDebug() << (debugVertices1 == debugVertices2);
-
-    // model->meshes().first()
-    QVector<QVector3D> translated;
-    for (const auto &n: model->nodes().mNodes) {
-        for (const auto *m: n->mMeshes) {
-            QVector<QMatrix4x4> skeleton;
-            Qtr3dModel::setupSkeleton(skeleton,n->rootNode(),m,nullptr,QMatrix4x4(),QMatrix4x4());
-
-            for (int vi=0; vi<10; vi++) {
-                qDebug() << vi << m->vertex(vi).p.toQVector() << skeleton[int(m->vertex(vi).bi[0])] * m->vertex(vi).p.toQVector();
-            }
-        }
-    }
+    // mUi.viewer->camera()->lookAt(QVector3D(3*model->radius(),2*model->radius(),3*model->radius()),model->center(),{0,1,0});
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -265,16 +227,11 @@ void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, cons
                 int bone0 = v.bi[0];
                 vindex++;
                 mesh->addVertex(v);
-                if (mesh->vertexCount() == 387)
-                    qDebug() << "BLUB";
-
 
                 initVertex(v,sibling, vertices, normals, polygons[i]);
                 int bone1 = v.bi[0];
                 vindex++;
                 mesh->addVertex(v);
-                if (mesh->vertexCount() == 387)
-                    qDebug() << "BLUB";
 
                 v.p.x = cx/f;
                 v.p.y = cy/f;
@@ -303,8 +260,7 @@ void LbaModelViewer::loadBodyMeshes(Qtr3dModel &model, const LbaBody &body, cons
                        v.bw[1] = 0.5;
                 }
                 mesh->addVertex(v);
-                if (mesh->vertexCount() == 402)
-                    qDebug() << "BLUB";
+
                 vindex++;
             }
         }
@@ -324,13 +280,35 @@ void LbaModelViewer::loadBodySpheres(Qtr3dModel &model, const LbaBody &body, con
     const auto &spheres = body.spheres();
 
     for (const auto &sphere: spheres) {
+
+        int sphereBoneId = body.vertices()[sphere.centerPoint].boneId;
+
+        const auto *sphereNode = model.nodes().nodeByName(QString::number(sphereBoneId));
+        if (!sphereNode) {
+            qWarning() << "LbaModelViewer::loadBodySpheres: invalid model sphere";
+            continue;
+        }
+
         auto *mesh = mUi.viewer->createMesh();
         Qtr3d::meshBySphere(*mesh, 15, pal.palette()[sphere.colorIndex]);
 
-        QMatrix4x4 transform;
-        transform.translate(body.vertices()[sphere.centerPoint].toVector()/800.0);
-        transform.scale(sphere.size/800.0);
-        model.createNode(mesh,transform,"");
+
+        Qtr3dMesh::Bone b;
+        b.name = "0";
+
+        for (int vi=0; vi<mesh->vertexCount(); vi++) {
+            mesh->updateBone(vi,Qtr3dVector(0,-1,-1),Qtr3dVector(1,0,0));
+            b.weights << Qtr3dMesh::BoneWeight(vi,1);
+        }
+        mesh->addBone(b);
+
+
+        // QMatrix4x4 transform;
+        // transform.translate(body.vertices()[sphere.centerPoint].toVector()/800.0);
+        // transform.scale(sphere.size/800.0);
+        // model.createNode(mesh,transform,"");
+
+        model.addMesh(mesh,sphereNode->mName);
     }
 }
 
@@ -396,22 +374,10 @@ void LbaModelViewer::loadModelNodes(Qtr3dModel &model, Qtr3dMesh *mesh, const Lb
                 body.vertices()[nextBones[i].parentVertex].y/800.0,
                 body.vertices()[nextBones[i].parentVertex].z/800.0);
 
-
-        QMatrix4x4 subMatrixAni;
-        if (nextBones[i].boneType == 0) {
-
-            if (nextBones[i].rotateZ)
-                subMatrixAni.rotate(nextBones[i].rotateZ,0,0,1);
-            if (nextBones[i].rotateY)
-                subMatrixAni.rotate(nextBones[i].rotateY,0,1,0);
-            if (nextBones[i].rotateX)
-                subMatrixAni.rotate(nextBones[i].rotateX,1,0,0);
-
-        } else {
-            subMatrixAni.translate( nextBones[i].rotateX/800.0,
-                                    nextBones[i].rotateY/800.0,
-                                    nextBones[i].rotateZ/800.0);
-        }
+        QMatrix4x4 subMatrixAni = LbaBody::transformByBone(nextBones[i].boneType,
+                                                           nextBones[i].rotateX,
+                                                           nextBones[i].rotateY,
+                                                           nextBones[i].rotateZ);
 
         QMatrix4x4 nodeMatrix = /*parentMatrix **/ subMatrix * subMatrixAni;
 
@@ -443,7 +409,6 @@ void LbaModelViewer::loadBodyBones(Qtr3dModel &model, const LbaBody &body)
     if (maxId < 0)
         return; // WTF?
 
-    const auto &bones    = body.bones();
     for (int bi=0; bi<=maxId; bi++) {
         Qtr3dMesh::Bone bone;
         bone.name = QString::number(bi);
@@ -452,19 +417,7 @@ void LbaModelViewer::loadBodyBones(Qtr3dModel &model, const LbaBody &body)
                 bone.weights << Qtr3dMesh::BoneWeight(vi,1.0);
         }
 
-        // Offset-Calculation:
-        // Find LBA1-Bone:
-        /*
-        int lbaVertexId = -1;
-        for (const auto &b: bones) {
-            if (b.id == bi) {
-                lbaVertexId = b.parentVertex;
-            }
-        }
-        if (lbaVertexId)
-            bone.offset.translate(vertices[lbaVertexId].toVector());
-        else */
-            bone.offset.setToIdentity();
+        bone.offset.setToIdentity();
 
         mesh->addBone(bone);
     }
@@ -473,33 +426,70 @@ void LbaModelViewer::loadBodyBones(Qtr3dModel &model, const LbaBody &body)
 //-------------------------------------------------------------------------------------------------
 void LbaModelViewer::loadBodyAnimation(Qtr3dModel &model, const LbaBody &body, LbaAnimation *animation)
 {
+    if (model.meshes().count() <= 0)
+        return;
+
     if (!animation)
         return;
 
-    if (animation->keyFrameCount() <= 0)
+    if (animation->keyFrameCount() <= 0 || animation->bones(0).count() <= 0)
         return;
-
-    qDebug() << "Loading LBA1 Animation";
-    if (model.meshes().count() <= 0 || body.bones().count() <= 0) {
-        qWarning() << "Invalid model. Cant load Animation";
-        return;
-    }
 
     // Create skeletal for the primary LBA-Mesh ("Skin")
-    Qtr3dModelAnimation *anim = new Qtr3dModelAnimation("demo",1000,1000);
+    Qtr3dModelAnimation *anim = new Qtr3dModelAnimation("demo",3000,1000);
 
+    /*
+        LBA  has synchronous keyframes:
+           - keyframe n [ node 0, node 1, node n ]
+
+        QT3D has ASSIMP-Channels
+           - node n [ keyframe 0, keyframe 1, keyframe n ]
+
+        ... so we have to "invert" the datastructure here
+    */
+
+    for (int i=0; i<animation->bones(0).count(); i++) {
+
+        Qtr3dModelAnimation::Channel ch;
+        ch.nodeName = QString::number(i);
+
+        // first loop: create rotation keys:
+        for (int k=0; k<animation->keyFrameCount(); k++) {
+            float t = k * 3000/animation->keyFrameCount();
+            const auto &lbaBone = animation->bones(k).at(i);
+            if (lbaBone.boneType == 0) { // Rotation
+
+                Qtr3dModelAnimation::RotationKey rotation(t, QQuaternion::fromEulerAngles(
+                                                              lbaBone.rotateX,
+                                                              lbaBone.rotateY,
+                                                              lbaBone.rotateZ));
+                ch.mRotationKeys << rotation;
+            } else {
+                Qtr3dModelAnimation::PositionKey position(t, QVector3D(lbaBone.rotateX/800.0,lbaBone.rotateY/800.0,lbaBone.rotateZ/800.0));
+            }
+        }
+
+        anim->addChannel(ch);
+    }
     model.addAnimation(anim);
 
-    auto *mesh = model.meshes().first();
-    Q_ASSERT(mesh);
-
     const auto &bones    = body.bones();
-
     if (bones.count() != animation->bones(0).count()) {
         qWarning() << "Animation loading: invalid bone count: " << bones.count() << "/" << animation->bones(0).count();
         return;
     }
 
-    qInfo() << "Setup Model Animation";
+}
+
+void LbaModelViewer::setupViewerByUI()
+{
+    if (mUi.btnBlack->isChecked())
+        mUi.viewer->assets()->environment().setClearColor(Qt::black);
+    if (mUi.btnGrey->isChecked())
+        mUi.viewer->assets()->environment().setClearColor(QColor(210,210,210));
+    if (mUi.btnWhite->isChecked())
+        mUi.viewer->assets()->environment().setClearColor(Qt::white);
+
+    mUi.viewer->camera()->lookAt(mUi.viewer->camera()->pos(),{0.0,mUi.spbOffset->value(),0.0},{0,1,0});
 }
 

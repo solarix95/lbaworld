@@ -343,6 +343,31 @@ QList<int> LbaBody::verticesByBone(int id) const
 }
 
 //-----------------------------------------------------------------------------------------
+QMatrix4x4 LbaBody::transformByBone(int boneType, int value1, int value2, int value3)
+{
+    QMatrix4x4 ret;
+
+    if (boneType == 0) {
+
+        // http://lbafileinfo.kaziq.net/index.php/LBA1:Animation
+        // 1024 -> 360 degrees
+
+        if (value3)
+            ret.rotate(value3,0,0,1);
+        if (value2)
+            ret.rotate(value2,0,1,0);
+        if (value1)
+            ret.rotate(value1,1,0,0);
+    } else {
+        ret.translate( value1/800.0,
+                       value2/800.0,
+                       value3/800.0);
+    }
+
+    return ret;
+}
+
+//-----------------------------------------------------------------------------------------
 void LbaBody::loadLba1Points(BinaryReader &reader)
 {
     quint16 verticesCount;

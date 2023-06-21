@@ -120,6 +120,8 @@ public:
     Bone   boneById(int id) const;
     QList<int> verticesByBone(int id) const;
 
+    static QMatrix4x4 transformByBone(int boneType, int value1, int value2, int value3);
+
 private:
 
     void loadLba1Points(BinaryReader &reader);

@@ -27,7 +27,11 @@ private:
     void loadBodyBones(Qtr3dModel &model, const LbaBody &body);
     void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body, LbaAnimation *animation);
 
+    // UI
+    void setupViewerByUI();
+
 private:
+
     Ui::LbaModelUi mUi;
 
     const LbaRess &mRess;
