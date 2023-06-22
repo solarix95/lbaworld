@@ -125,20 +125,18 @@ void LbaBody::setAnimation(LbaAnimation *ani)
 //-------------------------------------------------------------------------------------------
 void LbaBody::translateVertices(int keyFrame)
 {
-    mAnimationKeyFrame = keyFrame;
     Vertices tv = mVertices;
 
-    // QVector3D matrix(0,0,0);
     QMatrix4x4 matrix;
-    translateVertices(-1,matrix, tv);
+    translateVertices(-1,matrix, tv, keyFrame);
 
     mVerticesTranslated = tv;
 }
 
 //-------------------------------------------------------------------------------------------
-void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices)
+void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices, int keyFrame) const
 {
-    Bones nextBones = childsOfBone(parentId);
+    Bones nextBones = childsOfBone(parentId, keyFrame);
 
     for(int i=0; i<nextBones.count(); i++) {
 
@@ -173,33 +171,22 @@ void LbaBody::translateVertices(int parentId, QMatrix4x4 matrix, Vertices &verti
             QVector4D vec(mVertices[vertexIndexes[v]].x,mVertices[vertexIndexes[v]].y,mVertices[vertexIndexes[v]].z,1);
             vec = boneMatrix * vec;
 
-            if (vertexIndexes[v] == 379)
-                qDebug() << "INIT first vertex";
-
-            if (vertexIndexes[v] == 380)
-                qDebug() << "INIT first vertex";
-
-            if (vertexIndexes[v] == 381)
-                qDebug() << "INIT first vertex";
-
             vertices[vertexIndexes[v]].x = vec.x();
             vertices[vertexIndexes[v]].y = vec.y();
             vertices[vertexIndexes[v]].z = vec.z();
 
         }
-        translateVertices(nextBones[i].id,boneMatrix, vertices);
+        translateVertices(nextBones[i].id,boneMatrix, vertices, keyFrame);
     }
 }
 
 //-----------------------------------------------------------------------------------------
-LbaBody::Vertices LbaBody::translatedVertices(int keyFrame)
+LbaBody::Vertices LbaBody::translatedVertices(int keyFrame) const
 {
-    mAnimationKeyFrame = keyFrame;
     Vertices tv = mVertices;
 
-    // QVector3D matrix(0,0,0);
     QMatrix4x4 matrix;
-    translateVertices(-1,matrix, tv);
+    translateVertices(-1,matrix, tv, keyFrame);
 
     return tv;
 }
@@ -218,7 +205,7 @@ QVector<QMatrix4x4> LbaBody::boneAnimation() const
 //-----------------------------------------------------------------------------------------
 void LbaBody::boneAnimation(int parentId, const QMatrix4x4 &parentMatrix, QVector<QMatrix4x4> &bones) const
 {
-    Bones nextBones = childsOfBone(parentId);
+    Bones nextBones = childsOfBone(parentId, -1);
 
     for(int i=0; i<nextBones.count(); i++) {
 
@@ -301,17 +288,17 @@ const LbaBody::Spheres &LbaBody::spheres() const
 }
 
 //-----------------------------------------------------------------------------------------
-LbaBody::Bones LbaBody::childsOfBone(int parentId) const
+LbaBody::Bones LbaBody::childsOfBone(int parentId, int keyFrame) const
 {
     LbaBody::Bones childs;
     for (int i=0; i<mBones.count(); i++) {
         if (mBones[i].parentId == parentId) {
             childs << mBones[i];
             if (mAnimation) {
-                childs.last().boneType = mAnimation->bones(mAnimationKeyFrame)[i].boneType;
-                childs.last().rotateX  = mAnimation->bones(mAnimationKeyFrame)[i].rotateX;
-                childs.last().rotateY  = mAnimation->bones(mAnimationKeyFrame)[i].rotateY;
-                childs.last().rotateZ  = mAnimation->bones(mAnimationKeyFrame)[i].rotateZ;
+                childs.last().boneType = mAnimation->bones(keyFrame)[i].boneType;
+                childs.last().rotateX  = mAnimation->bones(keyFrame)[i].rotateX;
+                childs.last().rotateY  = mAnimation->bones(keyFrame)[i].rotateY;
+                childs.last().rotateZ  = mAnimation->bones(keyFrame)[i].rotateZ;
             }
         }
     }
@@ -320,14 +307,22 @@ LbaBody::Bones LbaBody::childsOfBone(int parentId) const
 }
 
 //-----------------------------------------------------------------------------------------
-LbaBody::Bone LbaBody::boneById(int id) const
+int LbaBody::boneIndexById(int id) const
 {
     for (int i=0; i<mBones.count(); i++) {
         if (mBones[i].id == id)
-            return mBones[i];
+            return i;
     }
+    return -1;
+}
 
-    return Bone();
+//-----------------------------------------------------------------------------------------
+LbaBody::Bone LbaBody::boneById(int id) const
+{
+    int index = boneIndexById(id);
+    if (index < 0 )
+        return Bone();
+    return mBones[index];
 }
 
 //-----------------------------------------------------------------------------------------

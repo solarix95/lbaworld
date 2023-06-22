@@ -335,7 +335,7 @@ void LbwGeometryBuffer::createVertexByBone(const LbaBody &body, LbwVertex *&v, i
         v += 2;
     }
 
-    LbaBody::Bones childs = body.childsOfBone(bone.id);
+    LbaBody::Bones childs = body.childsOfBone(bone.id, -1);
     for(int c=0; c < childs.count(); c++) {
         createVertexByBone(body,v,childs[c].id);
     }

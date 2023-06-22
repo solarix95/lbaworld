@@ -103,8 +103,9 @@ public:
     void setAnimation(LbaAnimation *ani);
 
     void translateVertices(int keyFrame = -1);
-    void translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices);
-    Vertices translatedVertices(int keyFrame = -1);
+    void translateVertices(int parentId, QMatrix4x4 matrix, Vertices &vertices, int keyFrame) const;
+    Vertices translatedVertices(int keyFrame = -1) const;
+
     QVector<QMatrix4x4>  boneAnimation() const;
     void                 boneAnimation(int parentId, const QMatrix4x4 &parentMatrix, QVector<QMatrix4x4> &bones) const;
 
@@ -116,7 +117,8 @@ public:
     const Lines    &lines() const;
     const Spheres  &spheres() const;
 
-    Bones  childsOfBone(int parentId) const;
+    Bones  childsOfBone(int parentId, int keyFrame) const;
+    int    boneIndexById(int id) const;
     Bone   boneById(int id) const;
     QList<int> verticesByBone(int id) const;
 
