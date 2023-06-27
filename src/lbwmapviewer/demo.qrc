@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>map/Rolling Hills Bitmap 1025.png</file>
+        <file>map/Rolling Hills Height Map.png</file>
+    </qresource>
+</RCC>

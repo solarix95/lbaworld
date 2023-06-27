@@ -9,6 +9,9 @@ QT          += widgets
 CONFIG      += debug
 QMAKE_CXXFLAGS += -std=c++11
 
+LIBQTR3D_PATH = ../../../libqtr3d/
+include(../../../libqtr3d/libqtr3d.pro)
+
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)
 

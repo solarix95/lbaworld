@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE    = app
-TARGET      = lbamodelviewer2
+TARGET      = lbwmodelviewer
 INCLUDEPATH += .
 QT          += core widgets
 CONFIG      += debug c++11

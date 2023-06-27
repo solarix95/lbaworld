@@ -10,6 +10,9 @@ LbaAnimation::LbaAnimation()
 //-------------------------------------------------------------------------------------------
 bool LbaAnimation::fromBuffer(const QByteArray &buffer)
 {
+    if (buffer.isEmpty())
+        return false;
+
     mFrames.clear();
 
     BinaryReader reader(buffer);
