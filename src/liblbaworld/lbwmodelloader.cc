@@ -279,7 +279,9 @@ void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body, LbaAnimation *ani
                                                               lbaBone.rotateZ));
                 ch.mRotationKeys << rotation;
             } else {
+                Q_ASSERT(lbaBone.boneType == 1);
                 Qtr3dModelAnimation::PositionKey position(t, QVector3D(lbaBone.rotateX/800.0,lbaBone.rotateY/800.0,lbaBone.rotateZ/800.0));
+                ch.mPositionKeys << position;
             }
         }
 

@@ -1,4 +1,5 @@
 #include "lbwmap.h"
+#include "lbwactor.h"
 
 #include <libqtr3d/qtr3dmesh.h>
 #include <libqtr3d/qtr3dgeometrystate.h>
@@ -12,7 +13,6 @@ LbwMap::LbwMap(Qtr3dAssets *assets)
  , mHighMap(nullptr)
  , mMapMesh(nullptr)
  , mMapState(nullptr)
- , mPlayer(nullptr)
 {
     Q_ASSERT(mAssets);
 }
@@ -36,20 +36,43 @@ void LbwMap::init(const QImage &highmap, const QImage &mapTexture)
     mMapMesh = mAssets->createMesh();
     Qtr3d::meshByHighmap(*mMapMesh,highmap,mapTexture, {1,200,1});
     mAssets->createState(mMapMesh, Qtr3d::NoLighting);
+
+    mHighMap = new Qtr3dHighmap();
+    mHighMap->fromImage(highmap,{1,200,1});
+
+    // auto *debug = mAssets->createMesh();
+    //Qtr3d::normalMeshByMesh(*debug,*mMapMesh,1);
+    //mAssets->createState(debug);
 }
 
 //-------------------------------------------------------------------------------------------------
 void LbwMap::destroy()
 {
-    if (mHighMap)
+    if (mHighMap) {
         delete mHighMap;
+        mHighMap = nullptr;
+    }
 
-    if (mMapState)
+    if (mMapState) {
         delete mMapState;
+        mMapState = nullptr;
+    }
 
-    if (mMapMesh)
+    if (mMapMesh) {
         delete mMapMesh;
+        mMapMesh = nullptr;
+    }
+}
 
-    if (mPlayer)
-        delete mPlayer;
+//-------------------------------------------------------------------------------------------------
+void LbwMap::placeActor(LbwActor *actor, float x, float z)
+{
+    if (!mHighMap)
+        return;
+
+    Q_ASSERT(actor);
+
+    float height = mHighMap->yHightAt(x,z);
+
+    actor->setPos(QVector3D(x,height,z));
 }

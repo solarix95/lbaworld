@@ -25,7 +25,9 @@ HEADERS += \
     ../liblbaworld/lbwabstractgeometrybuffer.h \
     ../liblbaworld/lbwabstractgeometrystate.h \
     ../liblbaworld/lbwmodelloader.h \
-    ../liblbaworld/lbwmap.h
+    ../liblbaworld/lbwmap.h \
+    ../liblbaworld/lbwcharacter.h \
+    ../liblbaworld/lbwactor.h
 
 SOURCES += \
     ../liblbaworld/lbwaudio.cc \
@@ -47,7 +49,9 @@ SOURCES += \
     ../liblbaworld/lbwabstractgeometrybuffer.cc \
     ../liblbaworld/lbwabstractgeometrystate.cc \
     ../liblbaworld/lbwmodelloader.cc \
-    ../liblbaworld/lbwmap.cc
+    ../liblbaworld/lbwmap.cc \
+    ../liblbaworld/lbwcharacter.cc \
+    ../liblbaworld/lbwactor.cc
 
 RESOURCES += ../liblbaworld/resources.qrc
 

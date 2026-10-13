@@ -3,12 +3,13 @@
 
 #include <QObject>
 #include <QImage>
+#include <QList>
 
 class Qtr3dAssets;
 class Qtr3dMesh;
 class Qtr3dGeometryState;
 class Qtr3dHighmap;
-class LbwPlayer;
+class LbwActor;
 
 class LbwMap : public QObject
 {
@@ -19,6 +20,8 @@ public:
     void init(const QImage &highmap, const QImage &mapTexture);
     void destroy();
 
+    void placeActor(LbwActor *actor, float x, float z);
+
 private:
     Qtr3dAssets  *mAssets;
 
@@ -27,9 +30,8 @@ private:
     Qtr3dMesh          *mMapMesh;
     Qtr3dGeometryState *mMapState;
 
-
-    // Player/Character
-    LbwPlayer    *mPlayer;
 };
+
+using LbwMaps = QList<LbwMap*>;
 
 #endif // LBWMAP_H

@@ -58,7 +58,7 @@ LbaModelViewer::LbaModelViewer(const LbaRess &ress)
 
         new Qtr3dFreeCameraController(mUi.viewer),
         mUi.viewer->setDefaultLighting(Qtr3d::FlatLighting);
-        mUi.viewer->primaryLightSource()->setAmbientStrength(0.5);
+        mUi.viewer->primaryLightSource()->setAmbientStrength(0.8);
 
         setupViewerByUI();
 

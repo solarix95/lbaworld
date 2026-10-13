@@ -4,7 +4,8 @@
 #include "ui_viewerform.h"
 #include <lbaress.h>
 #include <lbapalette.h>
-
+#include <lbwcharacter.h>
+#include <lbwactor.h>
 
 class LbwMap;
 
@@ -27,7 +28,10 @@ private:
 
     const LbaRess &mRess;
 
-    LbwMap        *mMap;
+    LbwMap          *mMap;
+    LbwCharacters    mModels;
+    LbwActors        mActors;
+
 };
 
 #endif // LBAMODELVIEWER_H
