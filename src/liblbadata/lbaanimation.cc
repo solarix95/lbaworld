@@ -130,6 +130,25 @@ int LbaAnimation::durationTicks() const
 }
 
 //-------------------------------------------------------------------------------------------
+int LbaAnimation::introDurationTicks() const
+{
+    if (!isValid())
+        return 0;
+
+    const int loopIndex = qBound(0, mLoopStartIndex, mFrames.count()-1);
+    int duration = 0;
+    for (int frameIndex = 0; frameIndex < loopIndex; ++frameIndex)
+        duration += mFrames[frameIndex].keyFrameLength;
+    return duration;
+}
+
+//-------------------------------------------------------------------------------------------
+int LbaAnimation::transitionDurationTicks() const
+{
+    return isValid() ? mFrames.first().keyFrameLength : 0;
+}
+
+//-------------------------------------------------------------------------------------------
 int LbaAnimation::playbackDurationTicks() const
 {
     if (!isValid())

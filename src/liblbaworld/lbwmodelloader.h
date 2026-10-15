@@ -18,7 +18,8 @@ void loadBodyLines(Qtr3dModel &model, const LbaBody &body, const LbaPalette &pal
 void loadModelNodes(Qtr3dModel &model, Qtr3dMesh *mesh, const LbaBody &body, int lbaParentId, Qtr3dModel::Node *parentNode);
 void loadSkinBones(Qtr3dMesh *skinMesh, const LbaBody &body);
 void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body,
-                       LbaAnimation *animation, const QString &animationName = "demo");
+                       LbaAnimation *animation, const QString &animationName = "demo",
+                       bool reportBoneMismatch = true);
 
 };
 

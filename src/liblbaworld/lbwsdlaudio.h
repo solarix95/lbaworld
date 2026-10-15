@@ -10,6 +10,7 @@ class LbwSdlAudio : public LbwAudio
     Q_OBJECT
 public:
     LbwSdlAudio(const LbaRess &ress);
+    ~LbwSdlAudio() override;
 
     virtual void init() override;
 
@@ -24,6 +25,9 @@ private slots:
 private:
     int   nextFreeChannel() const;
     void *mChannels[CHANNELS];
+    void *mMusic;
+    bool  mSdlInitialized;
+    bool  mMixerOpen;
 };
 
 #endif // LBASDLAUDIO_H

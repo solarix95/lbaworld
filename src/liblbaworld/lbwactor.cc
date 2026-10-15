@@ -66,10 +66,13 @@ bool LbwActor::setAnimation(const QString &animation)
 
     mCurrentAnimation = animation;
     mCurrentClip = clip;
-    mState->setAnimator(new Qtr3dModelAnimator(modelAnimation));
-    mState->animator()->setLoop(true);
-    mState->animator()->start();
-    mState->animator()->setEnabled(true);
+    Qtr3dModelAnimator *previousAnimator = mState->animator();
+    Qtr3dModelAnimator *nextAnimator = new Qtr3dModelAnimator(modelAnimation);
+    nextAnimator->setLoop(true);
+    nextAnimator->transitionFrom(previousAnimator,
+                                 mCurrentClip->animation.transitionDurationTicks());
+    mState->setAnimator(nextAnimator);
+    nextAnimator->start();
     mLastAnimationTime = 0.0f;
     mLastRootMotion = mCurrentClip->animation.rootMotionAt(0.0f);
     return true;
@@ -101,6 +104,25 @@ QString LbwActor::currentCostume() const
 QString LbwActor::currentAnimation() const
 {
     return mCurrentAnimation;
+}
+
+//-------------------------------------------------------------------------------------------------
+float LbwActor::animationTime() const
+{
+    return mState && mState->animator() ? mState->animator()->animationTime() : 0.0f;
+}
+
+//-------------------------------------------------------------------------------------------------
+int LbwActor::animationIntroDurationTicks() const
+{
+    return mCurrentClip ? mCurrentClip->animation.introDurationTicks() : 0;
+}
+
+//-------------------------------------------------------------------------------------------------
+bool LbwActor::animationIntroActive() const
+{
+    const int introDuration = animationIntroDurationTicks();
+    return introDuration > 0 && animationTime() < introDuration;
 }
 
 //-------------------------------------------------------------------------------------------------

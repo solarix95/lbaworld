@@ -42,6 +42,7 @@ private:
     Q_INVOKABLE void showstatus(const QStringList &args);
     Q_INVOKABLE void setwindowrect(const QStringList &args);
     Q_INVOKABLE void printfla(const QStringList &args);
+    Q_INVOKABLE void map(const QStringList &args);
 
     void setupHelp();
 

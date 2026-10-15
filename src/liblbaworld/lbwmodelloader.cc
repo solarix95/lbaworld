@@ -74,22 +74,14 @@ void loadBodySkin(Qtr3dModel &model, const LbaBody &body)
             {
                 Qtr3dColoredVertex v;
                 initVertex(v,0, vertices, normals, polygons[i]);
-
-                if (v.n.isNull()) {
-                    qDebug() << "Argh?";
-                }
                 vindex++;
                 mesh->addVertex(v);
 
                 initVertex(v,1+triangleIndex, vertices, normals, polygons[i]);
                 vindex++;
-                if (v.n.isNull())
-                    qDebug() << "Argh?";
                 mesh->addVertex(v);
 
                 initVertex(v,2+triangleIndex, vertices, normals, polygons[i]);
-                if (v.n.isNull())
-                    qDebug() << "Argh?";
                 vindex++;
                 mesh->addVertex(v);
             }
@@ -240,7 +232,8 @@ void loadSkinBones(Qtr3dMesh *skinMesh, const LbaBody &body)
 }
 
 void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body,
-                       LbaAnimation *animation, const QString &animationName)
+                       LbaAnimation *animation, const QString &animationName,
+                       bool reportBoneMismatch)
 {
     if (model.meshes().count() <= 0)
         return;
@@ -252,7 +245,7 @@ void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body,
     const int animatedBoneCount = qMin(bodyBones.count(), animation->boneCount());
     if (animatedBoneCount <= 0)
         return;
-    if (bodyBones.count() != animation->boneCount())
+    if (reportBoneMismatch && bodyBones.count() != animation->boneCount())
         qWarning() << "Animation loading: different bone counts:"
                    << bodyBones.count() << "/" << animation->boneCount();
 

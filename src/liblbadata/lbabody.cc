@@ -498,7 +498,6 @@ void LbaBody::loadLba1Polygones(BinaryReader &reader, const LbaPalette &pal)
         reader.read(&nrVertices, 1);
         reader.read(&colorIndex, 1);
         reader.skip(1); // Unknown
-        qDebug() << "Polygon" << i << renderType << nrVertices << colorIndex;
         Polygon p;
         p.color = pal.palette()[colorIndex];
         if (renderType >= 9) {             // each vertex has a normal
@@ -599,7 +598,8 @@ int LbaBody::updateNormal(int normalIndex, QRgb color)
     Q_ASSERT(normalIndex >= 0 && normalIndex < mNormals.count());
 
     if (mNormals[normalIndex].color != color) {
-        qWarning() << "Cannot update color of normal" << normalIndex << mNormals[normalIndex].color << color;
+        // LBA1 normals do not carry their polygon color. A normal shared by
+        // differently colored polygons therefore needs a colored clone.
         mNormals << mNormals[normalIndex];
         mNormals.last().color = color;
         return mNormals.count() - 1;

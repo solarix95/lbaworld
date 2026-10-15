@@ -13,21 +13,51 @@
 //-------------------------------------------------------------------------------------------------
 LbwSdlAudio::LbwSdlAudio(const LbaRess &ress)
  : LbwAudio(ress)
+ , mMusic(nullptr)
+ , mSdlInitialized(false)
+ , mMixerOpen(false)
 {
     memset(&mChannels, 0, sizeof(mChannels));
 }
 
 //-------------------------------------------------------------------------------------------------
+LbwSdlAudio::~LbwSdlAudio()
+{
+    if (mMixerOpen) {
+        stopAll();
+        Mix_HaltMusic();
+        if (mMusic) {
+            Mix_FreeMusic(static_cast<Mix_Music*>(mMusic));
+            mMusic = nullptr;
+        }
+        // Mix_CloseAudio waits for the mixer callback thread. It must happen
+        // before SDL unloads the audio subsystem during process shutdown.
+        Mix_CloseAudio();
+        mMixerOpen = false;
+    }
+    if (mSdlInitialized) {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        mSdlInitialized = false;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
 void LbwSdlAudio::init()
 {
+    if (mMixerOpen)
+        return;
+
     emit log(tr("initialze SDL..."));
     // Qt owns the event loop and Unix signal handling. SDL 1.2's parachute
     // handlers would otherwise swallow SIGTERM without an SDL event pump.
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE) < 0) {
         qWarning() << "SDL INIT ERROR";
         emit log(tr("SDL_Init error: '%1'").arg(SDL_GetError()));
-    } else
+        return;
+    } else {
+        mSdlInitialized = true;
         emit log(tr("#00ff00 ...done"));
+    }
 
 #if defined(Q_OS_UNIX)
     // SDL 1.2 still installs quit handlers on some builds. There is no SDL
@@ -40,8 +70,12 @@ void LbwSdlAudio::init()
     if (Mix_OpenAudio(ORIGINAL_GAME_FREQUENCY, AUDIO_S16, 2, 256) < 0) {
         qWarning() << "Mix_OpenAudio" << Mix_GetError();
         emit log(tr("Mix_OpenAudio error: '%1'").arg(Mix_GetError()));
-    } else
+        return;
+    } else {
+        mMixerOpen = true;
+        Mix_AllocateChannels(CHANNELS);
         emit log(tr("#00ff00 ...done"));
+    }
 
     QTimer *t = new QTimer(this);
     connect(t, SIGNAL(timeout()), this, SLOT(checkChannels()));
@@ -51,14 +85,28 @@ void LbwSdlAudio::init()
 //-------------------------------------------------------------------------------------------------
 void LbwSdlAudio::playLocalMusicFile(const QString &filename)
 {
-    Mix_Music *mus = Mix_LoadMUS(filename.toUtf8().constData());
-    Mix_PlayMusic(mus,1); //Music loop=1
+    if (!mMixerOpen || filename.isEmpty())
+        return;
+
+    Mix_HaltMusic();
+    if (mMusic) {
+        Mix_FreeMusic(static_cast<Mix_Music*>(mMusic));
+        mMusic = nullptr;
+    }
+
+    mMusic = Mix_LoadMUS(filename.toUtf8().constData());
+    if (!mMusic) {
+        emit log(tr("Cannot load music '%1': %2").arg(filename, Mix_GetError()));
+        return;
+    }
+    if (Mix_PlayMusic(static_cast<Mix_Music*>(mMusic), 1) < 0)
+        emit log(tr("Cannot play music '%1': %2").arg(filename, Mix_GetError()));
 }
 
 //-------------------------------------------------------------------------------------------------
 void LbwSdlAudio::playVocBuffer(const QByteArray &vocData, int repeats)
 {
-    if (vocData.isEmpty())
+    if (!mMixerOpen || vocData.isEmpty())
         return;
 
     int nextChannel = nextFreeChannel();
@@ -82,6 +130,10 @@ void LbwSdlAudio::playVocBuffer(const QByteArray &vocData, int repeats)
 //-------------------------------------------------------------------------------------------------
 void LbwSdlAudio::stopAll()
 {
+    if (!mMixerOpen)
+        return;
+
+    Mix_HaltMusic();
     for (int i=0; i<CHANNELS; i++) {
         if (!mChannels[i])
             continue;
@@ -97,6 +149,9 @@ void LbwSdlAudio::stopAll()
 //-------------------------------------------------------------------------------------------------
 void LbwSdlAudio::checkChannels()
 {
+    if (!mMixerOpen)
+        return;
+
     for (int i=0; i<CHANNELS; i++) {
         if (!mChannels[i])
             continue;

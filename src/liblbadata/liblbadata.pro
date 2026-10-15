@@ -8,6 +8,7 @@ INCLUDEPATH += ../liblbadata
 HEADERS += \
     ../liblbadata/flamovie.h \
     ../liblbadata/hqrfile.h \
+    ../liblbadata/lbaresourcearchive.h \
     ../liblbadata/binaryreader.h \
     ../liblbadata/binarywriter.h \
     ../liblbadata/lbapalette.h \
@@ -21,6 +22,7 @@ HEADERS += \
 SOURCES += \
     ../liblbadata/flamovie.cc \
     ../liblbadata/hqrfile.cc \
+    ../liblbadata/lbaresourcearchive.cc \
     ../liblbadata/binreader.cc \
     ../liblbadata/binarywriter.cc \
     ../liblbadata/lbapalette.cc \
@@ -30,4 +32,3 @@ SOURCES += \
     ../liblbadata/lbaanimation.cc \
     ../liblbadata/lbasprite.cc \
     ../liblbadata/lbacharacter.cc
-

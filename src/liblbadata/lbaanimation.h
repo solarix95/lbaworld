@@ -78,6 +78,11 @@ public:
     int boneCount() const;
     int loopStartIndex() const;
     int durationTicks() const;
+    // Duration of the non-looping prefix. This is zero for animations whose
+    // loop starts at the first frame.
+    int introDurationTicks() const;
+    // Twin-E blends the current pose into frame zero for this duration.
+    int transitionDurationTicks() const;
     int playbackDurationTicks() const;
     int playbackLoopStartTicks() const;
 

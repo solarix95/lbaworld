@@ -7,6 +7,8 @@
 #include "lbacharacter.h"
 #include "lbapalette.h"
 #include "lbaress.h"
+#include "lbaresourcearchive.h"
+#include "lbwmapdata.h"
 #include <QDir>
 #include <QFile>
 #include <QRandomGenerator>
@@ -265,6 +267,80 @@ void TestLiblbadata::testHqrValidation()
 }
 
 //-------------------------------------------------------------------------------------------
+void TestLiblbadata::testLbaResourceBackends()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString loosePath = directory.filePath("maps");
+    QVERIFY(QDir().mkpath(loosePath));
+    const QByteArray manifest("{\"version\":1,\"entries\":{\"flat\":2}}");
+    const QByteArray mapData("{\"name\":\"flat\"}");
+
+    QFile manifestFile(loosePath + "/0000-index.json");
+    QVERIFY(manifestFile.open(QIODevice::WriteOnly));
+    QCOMPARE(manifestFile.write(manifest), qint64(manifest.size()));
+    manifestFile.close();
+
+    QFile mapFile(loosePath + "/0002-flat.json");
+    QVERIFY(mapFile.open(QIODevice::WriteOnly));
+    QCOMPARE(mapFile.write(mapData), qint64(mapData.size()));
+    mapFile.close();
+
+    LbaDirectoryArchive loose;
+    QVERIFY2(loose.open(loosePath), qPrintable(loose.errorString()));
+    QCOMPARE(loose.backendName(), QString("directory"));
+    QCOMPARE(loose.count(), 3);
+    QVERIFY(loose.hasEntry(0));
+    QVERIFY(!loose.hasEntry(1));
+    QVERIFY(loose.hasEntry(2));
+
+    bool ok = false;
+    QCOMPARE(loose.data(2, &ok), mapData);
+    QVERIFY(ok);
+    QCOMPARE(loose.data(1, &ok), QByteArray());
+    QVERIFY(!ok);
+
+    // Loose entries are deliberately not cached: edits are visible without
+    // rebuilding an HQR archive or restarting the resource manager.
+    const QByteArray changedMapData("{\"name\":\"flat-changed\"}");
+    QVERIFY(mapFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(mapFile.write(changedMapData), qint64(changedMapData.size()));
+    mapFile.close();
+    QCOMPARE(loose.data(2, &ok), changedMapData);
+    QVERIFY(ok);
+
+    HqrFile packedSource;
+    packedSource.appendBlock(manifest);
+    packedSource.appendBlock(QByteArray());
+    packedSource.appendBlock(changedMapData);
+    const QString packedPath = directory.filePath("MAPS.HQR");
+    QFile packedFile(packedPath);
+    QVERIFY(packedFile.open(QIODevice::WriteOnly));
+    const QByteArray serialized = packedSource.toByteArray(2);
+    QCOMPARE(packedFile.write(serialized), qint64(serialized.size()));
+    packedFile.close();
+
+    LbaHqrArchive packed;
+    QVERIFY2(packed.open(packedPath), qPrintable(packed.errorString()));
+    QCOMPARE(packed.backendName(), QString("hqr"));
+    QCOMPARE(packed.data(0, &ok), loose.data(0));
+    QVERIFY(ok);
+    QCOMPARE(packed.data(2, &ok), loose.data(2));
+    QVERIFY(ok);
+
+    // The public resource API and URL stay identical for both backends.
+    LbaRess looseResources;
+    LbaRess packedResources;
+    QVERIFY(looseResources.loadDirectoryArchive(LbaRess::LBAW, "maps", loosePath));
+    QVERIFY(packedResources.loadArchive(LbaRess::LBAW, "maps", packedPath));
+    QCOMPARE(looseResources.data("lbaw://maps/flat", &ok), changedMapData);
+    QVERIFY(ok);
+    QCOMPARE(packedResources.data("lbaw://maps/flat", &ok), changedMapData);
+    QVERIFY(ok);
+}
+
+//-------------------------------------------------------------------------------------------
 void TestLiblbadata::testLbaRess()
 {
     QTemporaryDir directory;
@@ -297,6 +373,45 @@ void TestLiblbadata::testLbaRess()
     QVERIFY(resources.tracks().contains("track01"));
     QCOMPARE(resources.validationErrors(LbaRess::LBA1), QStringList());
 
+    const QByteArray mapManifest("{\"version\":1,\"entries\":{\"flat\":1}}");
+    HqrFile packedMaps;
+    packedMaps.appendBlock(mapManifest);
+    packedMaps.appendBlock("packed map");
+    QFile packedMapsFile(directory.filePath("MAPS.HQR"));
+    QVERIFY(packedMapsFile.open(QIODevice::WriteOnly));
+    const QByteArray packedMapsData = packedMaps.toByteArray(2);
+    QCOMPARE(packedMapsFile.write(packedMapsData), qint64(packedMapsData.size()));
+    packedMapsFile.close();
+
+    QVERIFY(QDir(directory.path()).mkpath("maps"));
+    QFile looseManifest(directory.filePath("maps/0000-index.json"));
+    QVERIFY(looseManifest.open(QIODevice::WriteOnly));
+    QCOMPARE(looseManifest.write(mapManifest), qint64(mapManifest.size()));
+    looseManifest.close();
+    QFile looseMap(directory.filePath("maps/0001-flat.json"));
+    QVERIFY(looseMap.open(QIODevice::WriteOnly));
+    QCOMPARE(looseMap.write("loose map"), qint64(9));
+    looseMap.close();
+
+    QVERIFY(resources.loadFromDirectory(LbaRess::LBAW, directory.path()));
+    QVERIFY(resources.hasArchive(LbaRess::LBAW, "maps"));
+    QVERIFY(resources.archiveNames(LbaRess::LBAW).contains("maps"));
+    QCOMPARE(resources.resourceArchive(LbaRess::LBAW, "MAPS.HQR")->backendName(),
+             QString("directory"));
+    QVERIFY(resources.archivePath(LbaRess::LBAW, "maps").endsWith("/maps"));
+    QCOMPARE(resources.count(LbaRess::LBAW, "maps"), 2);
+    QCOMPARE(resources.entryIndex(LbaRess::LBAW, "maps", "flat", &ok), 1);
+    QVERIFY(ok);
+    QCOMPARE(resources.data("lbaw://maps/flat", &ok), QByteArray("loose map"));
+    QVERIFY(ok);
+    QCOMPARE(resources.data("w/maps/1", &ok), QByteArray("loose map"));
+    QVERIFY(ok);
+    QCOMPARE(LbaRess::toUrl(LbaRess::LBAW, "MAPS.HQR", "flat"),
+             QString("lbaw://maps/flat"));
+    QCOMPARE(resources.data("lbaw://maps/missing", &ok), QByteArray());
+    QVERIFY(!ok);
+    QVERIFY(resources.errorString().contains("missing"));
+
     LbaRess::Source source;
     LbaRess::Content content;
     QString ident;
@@ -310,6 +425,61 @@ void TestLiblbadata::testLbaRess()
     QCOMPARE(source, LbaRess::LBA2);
     QCOMPARE(content, LbaRess::Samples);
     QCOMPARE(ident, QString("42"));
+
+    QString archiveName;
+    QVERIFY(LbaRess::fromUrl("lbaw://maps/flat", source, archiveName, ident));
+    QCOMPARE(source, LbaRess::LBAW);
+    QCOMPARE(archiveName, QString("maps"));
+    QCOMPARE(ident, QString("flat"));
+}
+
+//-------------------------------------------------------------------------------------------
+void TestLiblbadata::testLbwMapData()
+{
+    const QByteArray validJson(
+                "{\"version\":1,\"name\":\"flat\",\"type\":\"flat\","
+                "\"size\":[30,20],\"playerSpawn\":[1,2,3],"
+                "\"groundColor\":\"#5f8f45\",\"backgroundColor\":\"#18222c\"}");
+
+    LbwMapData map;
+    QVERIFY2(map.fromJson(validJson), qPrintable(map.errorString()));
+    QVERIFY(map.isValid());
+    QCOMPARE(map.version(), 1);
+    QCOMPARE(map.name(), QString("flat"));
+    QCOMPARE(map.type(), QString("flat"));
+    QCOMPARE(map.size(), QSizeF(30, 20));
+    QCOMPARE(map.playerSpawn(), QVector3D(1, 2, 3));
+    QCOMPARE(map.groundColor(), QColor("#5f8f45"));
+    QCOMPARE(map.backgroundColor(), QColor("#18222c"));
+
+    QVERIFY(!map.fromJson("not JSON"));
+    QVERIFY(!map.isValid());
+    QVERIFY(map.errorString().contains("JSON"));
+
+    QVERIFY(!map.fromJson(
+                "{\"version\":2,\"name\":\"future\",\"type\":\"flat\","
+                "\"size\":[1,1],\"playerSpawn\":[0,0,0],\"groundColor\":\"green\"}"));
+    QVERIFY(map.errorString().contains("version"));
+
+    QVERIFY(!map.fromJson(
+                "{\"version\":1,\"name\":\"bad\",\"type\":\"heightmap\","
+                "\"size\":[1,1],\"playerSpawn\":[0,0,0],\"groundColor\":\"green\"}"));
+    QVERIFY(map.errorString().contains("type"));
+
+    QVERIFY(!map.fromJson(
+                "{\"version\":1,\"name\":\"bad\",\"type\":\"flat\","
+                "\"size\":[0,1],\"playerSpawn\":[0,0,0],\"groundColor\":\"green\"}"));
+    QVERIFY(map.errorString().contains("positive"));
+
+    QVERIFY(!map.fromJson(
+                "{\"version\":1,\"name\":\"bad\",\"type\":\"flat\","
+                "\"size\":[1,1],\"playerSpawn\":[0,0],\"groundColor\":\"green\"}"));
+    QVERIFY(map.errorString().contains("playerSpawn"));
+
+    QVERIFY(!map.fromJson(
+                "{\"version\":1,\"name\":\"bad\",\"type\":\"flat\","
+                "\"size\":[1,1],\"playerSpawn\":[0,0,0],\"groundColor\":\"not-a-color\"}"));
+    QVERIFY(map.errorString().contains("color"));
 }
 
 //-------------------------------------------------------------------------------------------
@@ -349,6 +519,8 @@ void TestLiblbadata::testLbaAnimation()
     QCOMPARE(animation.boneCount(), 2);
     QCOMPARE(animation.loopStartIndex(), 1);
     QCOMPARE(animation.durationTicks(), 23);
+    QCOMPARE(animation.introDurationTicks(), 5);
+    QCOMPARE(animation.transitionDurationTicks(), 5);
     QCOMPARE(animation.playbackLoopStartTicks(), 23);
     QCOMPARE(animation.playbackDurationTicks(), 41);
     QCOMPARE(animation.playbackTimeline().count(), 6);

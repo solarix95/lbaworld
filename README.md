@@ -67,6 +67,27 @@ not require an exported asset directory. Data paths can be supplied with the
 command-line options above or the `LBA1BASE`, `LBA2BASE` and `LBAWBASE`
 environment variables.
 
+LBA World resources use the same API with either a packed HQR archive or an
+unpacked development directory. For example, `lbaw://maps/flat` resolves
+`flat` through entry 0 of `MAPS.HQR`, or through
+`maps/0000-index.json` when the loose `maps` directory is present. Loose
+archives override same-named HQR files and are read on every access, so editing
+does not require repacking. Entry filenames begin with their numeric archive
+index, such as `0001-flat.json`; gaps remain unavailable archive entries.
+
+The repository contains the initial loose map resources in `data/maps`. They
+can be used directly with `--lbawbase=../lbaworld/data`. The normal data build
+also packs the exact same files into `bin/lbawbase/MAPS.HQR` for deployment.
+
+The main application starts without a map. Open the console with `F1` and load
+the initial plane with `map flat`. The command reads `lbaw://maps/flat` through
+the resource manager, validates the versioned JSON map description, loads
+Twinsen directly from the original LBA1 `FILE3D.HQR`, `BODY.HQR`, `ANIM.HQR`
+and `RESS.HQR`, and places him at the map's `playerSpawn`. Use Up/Down to walk
+forward/backward and Left/Right to turn; the original idle, walk and backward
+walk animations provide the root motion. For startup automation, pass
+`--exec="map flat"`.
+
 `lbwmodelviewer` retains its BODY/ANIM index controls. Passing `--entity=N`
 additionally enables the runtime character path: logical bodies and named
 animations are resolved through `FILE3D.HQR`, then BODY and ANIM entries are
@@ -107,4 +128,3 @@ Other ressources
 * twine-e: https://github.com/xesf/twin-e
 * lba2 remake: https://github.com/agrande/lba2remake
 * LBA1 Files: http://lbafileinfo.kazekr.net/index.php?title=LBA_1_files
-

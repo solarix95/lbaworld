@@ -9,6 +9,7 @@
 #include "lbasprite.h"
 #include "lbwaudio.h"
 #include "lbwscreen.h"
+#include "lbwmapdata.h"
 #include "lbwmissioncontrol.h"
 
 //-------------------------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ void LbwMissionControl::playfla(const QStringList &args)
 }
 
 //-------------------------------------------------------------------------------------------------
-void LbwMissionControl::quit(const QStringList &args)
+void LbwMissionControl::quit(const QStringList &)
 {
     qApp->quit();
 }
@@ -226,11 +227,53 @@ void LbwMissionControl::printfla(const QStringList &)
 }
 
 //-------------------------------------------------------------------------------------------------
+void LbwMissionControl::map(const QStringList &args)
+{
+    if (!mScreen) {
+        emit log("#ff0000 No 3D screen is registered");
+        return;
+    }
+    if (args.count() != 1) {
+        emit log("#ff0000 Usage: map <name-or-lbaw-url>");
+        return;
+    }
+
+    const QString requested = args.first().trimmed();
+    const QString url = requested.contains("://")
+            ? requested
+            : LbaRess::toUrl(LbaRess::LBAW, "maps", requested);
+
+    bool ok = false;
+    const QByteArray mapJson = mRess.data(url, &ok);
+    if (!ok) {
+        emit log(QString("#ff0000 Cannot load map '%1': %2")
+                 .arg(requested, mRess.errorString()));
+        return;
+    }
+
+    LbwMapData mapData;
+    if (!mapData.fromJson(mapJson)) {
+        emit log(QString("#ff0000 Invalid map '%1': %2")
+                 .arg(requested, mapData.errorString()));
+        return;
+    }
+
+    QString error;
+    if (!mScreen->loadMap(mapData, &error)) {
+        emit log(QString("#ff0000 Cannot initialize map '%1': %2")
+                 .arg(mapData.name(), error));
+        return;
+    }
+
+    emit log(QString("#00ff00 Loaded map '%1' from %2").arg(mapData.name(), url));
+}
+
+//-------------------------------------------------------------------------------------------------
 void LbwMissionControl::setupHelp()
 {
-    mCommandHelp["URL"]           = "LBA Resource URL: <version>/<hqr-source>/<index>";
+    mCommandHelp["URL"]           = "Resource URL: lba1://<archive>/<id> or lbaw://<archive>/<name>";
     mCommandHelp["playspl"]       = "playspl <URL>";
     mCommandHelp["showstatus"]    = "showstatus <string>";
     mCommandHelp["setwindowrect"] = "setwindowrect [ x y ] width height";
+    mCommandHelp["map"]           = "map <name-or-lbaw-url> - load an LBA World map";
 }
-

@@ -21,6 +21,9 @@ public:
 
     QString currentCostume() const;
     QString currentAnimation() const;
+    float animationTime() const;
+    int animationIntroDurationTicks() const;
+    bool animationIntroActive() const;
 
     bool update(float dtSeconds) override;
 

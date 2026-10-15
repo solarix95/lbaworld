@@ -12,7 +12,9 @@ private slots:
     void testHqrFile();
     void testHqrLazyFileAccess();
     void testHqrValidation();
+    void testLbaResourceBackends();
     void testLbaRess();
+    void testLbwMapData();
     void testLbaAnimation();
     void testLbaCharacter();
 

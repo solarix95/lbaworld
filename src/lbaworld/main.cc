@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     LbaRess           resources;   // body.hqr, ....
     LbwSdlAudio       audioSystem(resources);
     LbwConsole        console;
-    LbwScreen         screen(&console);
+    LbwScreen         screen(&console, resources);
     LbwMissionControl control(resources);
 
     control.registerAudio(&audioSystem);
