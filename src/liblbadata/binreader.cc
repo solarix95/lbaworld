@@ -1,4 +1,6 @@
 #include "binaryreader.h"
+#include <QtEndian>
+#include <cstring>
 
 #define ERROR(c) if (!c) { mError = true; return 0; }
 
@@ -14,7 +16,8 @@ BinaryReader::BinaryReader(const QByteArray &buffer)
 void BinaryReader::setBuffer(const QByteArray &buffer)
 {
     mBuffer = buffer;
-    mCursor = (quint8*)buffer.constData();
+    mCursor = reinterpret_cast<const quint8 *>(mBuffer.constData());
+    mError = false;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -22,6 +25,7 @@ void BinaryReader::clear()
 {
     mCursor = NULL;
     mBuffer.clear();
+    mError = false;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -29,7 +33,7 @@ int BinaryReader::pos() const
 {
     if (!mCursor)
         return -1;
-    return mCursor - (quint8*)mBuffer.constData();
+    return mCursor - reinterpret_cast<const quint8 *>(mBuffer.constData());
 }
 
 //-------------------------------------------------------------------------------------------
@@ -41,7 +45,7 @@ int BinaryReader::size() const
 //-------------------------------------------------------------------------------------------
 bool BinaryReader::atEnd() const
 {
-    return !mCursor || (mCursor > tail());
+    return !mCursor || (mCursor >= tail());
 }
 
 //-------------------------------------------------------------------------------------------
@@ -53,8 +57,10 @@ bool BinaryReader::error() const
 //-------------------------------------------------------------------------------------------
 bool BinaryReader::read(void *destPtr, int size)
 {
-    if ((mCursor + size) > tail())
+    if (!destPtr || !mCursor || size < 0 || size > (tail() - mCursor)) {
+        mError = true;
         return false;
+    }
     memcpy(destPtr,mCursor,size);
     mCursor += size;
     return true;
@@ -81,40 +87,50 @@ quint8 BinaryReader::readUint8()
 //-------------------------------------------------------------------------------------------
 qint16 BinaryReader::readInt16()
 {
-    qint16 ret;
-    bool done = read(&ret,2);
+    quint16 raw;
+    bool done = read(&raw,2);
     ERROR(done);
-    return ret;
+    return qint16(qFromLittleEndian(raw));
 }
 
 //-------------------------------------------------------------------------------------------
 quint16 BinaryReader::readUint16()
 {
-    quint16 ret;
-    bool done = read(&ret,2);
+    quint16 raw;
+    bool done = read(&raw,2);
     ERROR(done);
-    return ret;
+    return qFromLittleEndian(raw);
 }
 
 //-------------------------------------------------------------------------------------------
 qint32 BinaryReader::getInt32(int pos) const
 {
-    Q_ASSERT(pos >= 0 && pos < mBuffer.length());
-    return *(qint32*)(mBuffer.constData() + pos);
+    if (pos < 0 || pos > mBuffer.length() - 4) {
+        mError = true;
+        return 0;
+    }
+    return qint32(qFromLittleEndian<quint32>(
+                      reinterpret_cast<const uchar *>(mBuffer.constData() + pos)));
 }
 
 //-------------------------------------------------------------------------------------------
 quint32 BinaryReader::getUint32(int pos) const
 {
-    Q_ASSERT(pos >= 0 && pos < mBuffer.length());
-    return *(quint32*)(mBuffer.constData() + pos);
+    if (pos < 0 || pos > mBuffer.length() - 4) {
+        mError = true;
+        return 0;
+    }
+    return qFromLittleEndian<quint32>(
+                reinterpret_cast<const uchar *>(mBuffer.constData() + pos));
 }
 
 //-------------------------------------------------------------------------------------------
 bool BinaryReader::skip(int size)
 {
-    if ((mCursor + size) > tail())
+    if (!mCursor || size < 0 || size > (tail() - mCursor)) {
+        mError = true;
         return false;
+    }
     mCursor += size;
     return true;
 }
@@ -122,9 +138,11 @@ bool BinaryReader::skip(int size)
 //-------------------------------------------------------------------------------------------
 bool BinaryReader::seek(int pos)
 {
-    if (pos >= mBuffer.length())
+    if (pos < 0 || pos > mBuffer.length()) {
+        mError = true;
         return false;
-    mCursor = (quint8*)mBuffer.constData() + pos;
+    }
+    mCursor = reinterpret_cast<const quint8 *>(mBuffer.constData()) + pos;
 
     return true;
 }
@@ -132,15 +150,16 @@ bool BinaryReader::seek(int pos)
 //-------------------------------------------------------------------------------------------
 QByteArray BinaryReader::readBlock(int size)
 {
+    if (size < 0)
+        return QByteArray();
     QByteArray block(size,'\0');
-    read(block.data(),size);
+    if (!read(block.data(),size))
+        return QByteArray();
     return block;
 }
 
 //-------------------------------------------------------------------------------------------
-quint8 *BinaryReader::tail() const
+const quint8 *BinaryReader::tail() const
 {
-    Q_ASSERT(mCursor);
-    return (quint8*)(mBuffer.constData() + mBuffer.length());
+    return reinterpret_cast<const quint8 *>(mBuffer.constData() + mBuffer.length());
 }
-

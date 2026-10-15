@@ -8,11 +8,10 @@ INCLUDEPATH += .
 QT          += core widgets
 CONFIG      += debug c++11
 
+include(../lbaworld-build.pri)
+
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)
-
-LIBQTR3D_PATH = ../../../libqtr3d/
-include(../../../libqtr3d/libqtr3d.pro)
 
 # Input
 SOURCES += main.cc \

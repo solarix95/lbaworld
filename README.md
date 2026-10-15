@@ -1,15 +1,17 @@
 
 LBA World
 ===========
-C++/Qt-based Toolchain for LBA1 + LBA2 (Little Big Adventure, Adeline Software, 1994) 
+C++/Qt-based runtime asset library and toolchain for LBA1 + LBA2
+(Little Big Adventure, Adeline Software, 1994).
 
 Features
 ---------
-1) CLI-Utility "hqrpak": extract or create HQR (HighQualityResource) files 
-2) Utility "flaplayer": Viewer for LBA1 cinematics (*.FLA)
-3) Utility "lbaspriteviewer": LBA1/LBA2 2D-Sprite viewer (SPRITES.HQR + SPRITRAW.HQR)
-4) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
-5) Game-Engine "lbaworld": LBA-based games (WIP)
+1) Runtime HQR access with indexed, lazy block decompression
+2) CLI utility `hqrpak`: inspect, validate, extract or create HQR archives
+3) Utility "flaplayer": Viewer for LBA1 cinematics (*.FLA)
+4) Utility "lbaspriteviewer": LBA1/LBA2 2D-Sprite viewer (SPRITES.HQR + SPRITRAW.HQR)
+5) Utility "lbamodelviewer": LBA1 3D-Models viewer (BODY.HQR + INVOBJ.HQR)
+6) Application "lbaworld": foundation for a new LBA game using the original assets (WIP)
 
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/flaplayer.png)
 ![FLAPlayer](https://github.com/solarix95/lbaworld/blob/master/doc/modelviewer.png)
@@ -34,30 +36,64 @@ see also:
 * https://developer.valvesoftware.com/wiki/SteamCMD#Linux
 * https://steamdb.info/search/?a=app&q=lba
 
-3) Dependencies, Download, Build + Run (Ubuntu 16.04)
+3) Dependencies, sibling repositories and build (Qt 5)
 ```bash
-$ sudo apt install libsdl-mixer1.2-dev
-$ sudo apt install qt5-default qt5-qmake libqt5opengl5-dev
-$ git clone https://github.com/solarix95/lbaworld.git
-$ cd lbaworld/flaplayer
-$ qmake && make -j8
-$ ./flaplayer --lba1base=<dir-to-lba1-data>
+sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev \
+    libsdl1.2-dev libsdl-mixer1.2-dev libassimp-dev
 
-e.g.
-$ ./flaplayer --lba1base=/home/<yourname>/.steam/steamcmd/lba1steam/resources/LBA_FILES
-$ ./lbaspriteviewer --lba1base=/home/<yourname>/.steam/steamcmd/lba1steam/ --lba2base=/home/<yourname>/.steam/steamcmd/lba2steam/
+git clone https://github.com/solarix95/libqtr3d.git
+git clone https://github.com/solarix95/lbaworld.git
+mkdir lbaworld-build
+cd lbaworld-build
+qmake ../lbaworld/lbaworld.pro
+make -j8
+```
+
+The default build expects `libqtr3d` and `lbaworld` to be sibling directories.
+For a different location, pass `LIBQTR3D_PATH=/absolute/path/to/libqtr3d` to
+qmake. SFML is not required; its experimental backend can be enabled with
+`CONFIG+=lbaworld_sfml`.
+
+Run applications directly from the shadow-build `bin` directory:
+
+```bash
+./bin/lbaworld --lba1base=<dir-to-lba1-data>
+./bin/lbaspriteviewer --lba1base=<dir-to-lba1-data> --lba2base=<dir-to-lba2-data>
+./bin/lbwmodelviewer --lba1base=<dir-to-lba1-data> --entity=0 --animation-demo
+```
+
+`LbaRess` indexes the original HQR archives and reads entries on demand. It does
+not require an exported asset directory. Data paths can be supplied with the
+command-line options above or the `LBA1BASE`, `LBA2BASE` and `LBAWBASE`
+environment variables.
+
+`lbwmodelviewer` retains its BODY/ANIM index controls. Passing `--entity=N`
+additionally enables the runtime character path: logical bodies and named
+animations are resolved through `FILE3D.HQR`, then BODY and ANIM entries are
+read directly from their original archives. `--logical-body=N` selects a
+logical body (default `0`), and `--animation-demo` runs
+`idle -> walk -> idle` including actor root motion.
+
+HQR diagnostics:
+
+```bash
+./bin/hqrpak --list BODY.HQR
+./bin/hqrpak --validate BODY.HQR
+./bin/hqrpak --extract BODY.HQR extracted-body
 ```
 
 Milestones
 ---------
 
-- [x] HQR-Reader (a very basic milestone :))
+- [x] Validating HQR reader with lazy runtime access
 - [x] FLA-Player inluding sound (*.FLA: LBA cinematic clips)
 - [x] LBA1 Model Viewer including animation keyframes
+- [x] FILE3D character mapping and named LBA1 animations
+- [x] LBA1 animation timing, loop transitions and actor root motion
 - [x] LBA1 Sprites
 - [x] LBA2 (Raw)-Sprites
 - [] WIP: LBA2 3d-Models
-- [ ] Understanding Body -> Animation -> Actor -> Character -> Scene -> Scripts , ...
+- [ ] Character state machine -> Scene -> Scripts, ...
 - [ ] Proper 3D-Layers (SceneGraph)
 - [ ] ...
 - [ ] LBA3 (what else)
@@ -71,6 +107,4 @@ Other ressources
 * twine-e: https://github.com/xesf/twin-e
 * lba2 remake: https://github.com/agrande/lba2remake
 * LBA1 Files: http://lbafileinfo.kazekr.net/index.php?title=LBA_1_files
-
-
 

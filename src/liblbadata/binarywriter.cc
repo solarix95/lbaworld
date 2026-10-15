@@ -1,4 +1,5 @@
 #include "binarywriter.h"
+#include <QtEndian>
 
 //-------------------------------------------------------------------------------------------
 BinaryWriter::BinaryWriter()
@@ -38,25 +39,27 @@ void BinaryWriter::append(quint8 d)
 //-------------------------------------------------------------------------------------------
 void BinaryWriter::append(qint16 d)
 {
-    mBuffer.append((const char *)&d,2); // TODO: Write little endian
+    append(quint16(d));
 }
 
 //-------------------------------------------------------------------------------------------
 void BinaryWriter::append(quint16 d)
 {
-    mBuffer.append((const char *)&d,2); // TODO: Write little endian
+    const quint16 value = qToLittleEndian(d);
+    mBuffer.append(reinterpret_cast<const char *>(&value), sizeof(value));
 }
 
 //-------------------------------------------------------------------------------------------
 void BinaryWriter::append(qint32 d)
 {
-    mBuffer.append((const char *)&d,4); // TODO: Write little endian
+    append(quint32(d));
 }
 
 //-------------------------------------------------------------------------------------------
 void BinaryWriter::append(quint32 d)
 {
-    mBuffer.append((const char *)&d,4); // TODO: Write little endian
+    const quint32 value = qToLittleEndian(d);
+    mBuffer.append(reinterpret_cast<const char *>(&value), sizeof(value));
 }
 
 //-------------------------------------------------------------------------------------------

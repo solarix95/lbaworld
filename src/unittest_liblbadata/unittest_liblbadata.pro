@@ -9,6 +9,8 @@ QT += testlib
 QMAKE_CXXFLAGS += -std=c++11
 CONFIG += debug
 
+include(../lbaworld-build.pri)
+
 include(../liblbadata/liblbadata.pro)
 
 # The following define makes your compiler warn you if you use any

@@ -54,8 +54,16 @@ void LbaModelViewer::loadModel()
     int keyFrame = -1;
     if (mUi.chkAni->isChecked()) {
         ani = new LbaAnimation();
-        ani->fromBuffer(mRess.data(source,LbaRess::Anim,mUi.spbAniIndex->value()));
-        keyFrame = qMin(mUi.spbAniFrame->value(), ani->keyFrameCount()-1);
+        if (!ani->fromBuffer(mRess.data(source,LbaRess::Anim,mUi.spbAniIndex->value()))) {
+            qWarning() << "Animation loading failed:" << ani->errorString();
+            delete ani;
+            ani = NULL;
+        } else {
+            keyFrame = qBound(0, mUi.spbAniFrame->value(), ani->keyFrameCount()-1);
+            if (body.bones().count() != ani->boneCount())
+                qWarning() << "Animation loading: different bone counts:"
+                           << body.bones().count() << "/" << ani->boneCount();
+        }
     }
 
     int flags = 0;
@@ -69,4 +77,3 @@ void LbaModelViewer::loadModel()
     mUi.openGLWidget->clearGeometryBuffers();
     mUi.openGLWidget->appendGeometryBuffer(body, ani,keyFrame, pal,flags);
 }
-

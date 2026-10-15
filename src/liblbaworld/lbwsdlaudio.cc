@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
+#include <csignal>
 
 /** Original audio frequency */
 #define ORIGINAL_GAME_FREQUENCY		11025
@@ -20,11 +21,20 @@ LbwSdlAudio::LbwSdlAudio(const LbaRess &ress)
 void LbwSdlAudio::init()
 {
     emit log(tr("initialze SDL..."));
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+    // Qt owns the event loop and Unix signal handling. SDL 1.2's parachute
+    // handlers would otherwise swallow SIGTERM without an SDL event pump.
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE) < 0) {
         qWarning() << "SDL INIT ERROR";
         emit log(tr("SDL_Init error: '%1'").arg(SDL_GetError()));
     } else
         emit log(tr("#00ff00 ...done"));
+
+#if defined(Q_OS_UNIX)
+    // SDL 1.2 still installs quit handlers on some builds. There is no SDL
+    // event pump in this Qt application, so restore normal process handling.
+    std::signal(SIGINT, SIG_DFL);
+    std::signal(SIGTERM, SIG_DFL);
+#endif
 
     emit log(tr("initialze Mixer with %1 %2 2 256...").arg(ORIGINAL_GAME_FREQUENCY).arg(AUDIO_S16));
     if (Mix_OpenAudio(ORIGINAL_GAME_FREQUENCY, AUDIO_S16, 2, 256) < 0) {
@@ -33,7 +43,7 @@ void LbwSdlAudio::init()
     } else
         emit log(tr("#00ff00 ...done"));
 
-    QTimer *t = new QTimer();
+    QTimer *t = new QTimer(this);
     connect(t, SIGNAL(timeout()), this, SLOT(checkChannels()));
     t->start(66);
 }
@@ -106,4 +116,3 @@ int LbwSdlAudio::nextFreeChannel() const
     }
     return -1;
 }
-

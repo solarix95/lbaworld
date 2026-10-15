@@ -31,11 +31,11 @@ public:
 
 
 private:
-    quint8        *tail() const;
+    const quint8  *tail() const;
 
     QByteArray    mBuffer;
     const quint8 *mCursor;
-    bool          mError;
+    mutable bool  mError;
 };
 
 #endif // BINARYREADER_H

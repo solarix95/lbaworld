@@ -7,7 +7,8 @@ TARGET = lbaworld
 INCLUDEPATH += .
 QT += widgets
 QMAKE_CXXFLAGS += -std=c++11
-DESTDIR = ../../bin
+
+include(../lbaworld-build.pri)
 
 include(../liblbadata/liblbadata.pro)
 include(../liblbaworld/liblbaworld.pro)

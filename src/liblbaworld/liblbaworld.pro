@@ -4,10 +4,20 @@
 
 INCLUDEPATH += ../liblbaworld
 
+# liblbaworld exposes qtr3d types in its public headers. Keep the dependency in
+# one place so every consumer (including the main application) gets the same
+# include paths, sources and resources.
+isEmpty(LIBQTR3D_PATH) {
+    LIBQTR3D_PATH = $$clean_path($$_PRO_FILE_PWD_/../../../libqtr3d)
+}
+!exists($$LIBQTR3D_PATH/libqtr3d.pro) {
+    error("libqtr3d not found at $$LIBQTR3D_PATH. Set LIBQTR3D_PATH or place it next to lbaworld.")
+}
+include($$LIBQTR3D_PATH/libqtr3d.pro)
+
 # Input
 HEADERS += \
     ../liblbaworld/lbwaudio.h \
-    ../liblbaworld/lbwsfmlaudio.h \
     ../liblbaworld/lbwsdlaudio.h \
     ../liblbaworld/lbw3dwidget.h \
     ../liblbaworld/lbw3dsphere.h \
@@ -27,12 +37,12 @@ HEADERS += \
     ../liblbaworld/lbwmodelloader.h \
     ../liblbaworld/lbwmap.h \
     ../liblbaworld/lbwcharacter.h \
+    ../liblbaworld/lbwcharacterloader.h \
     ../liblbaworld/lbwactor.h
 
 SOURCES += \
     ../liblbaworld/lbwaudio.cc \
     ../liblbaworld/lbwsdlaudio.cc \
-    ../liblbaworld/lbwsfmlaudio.cc \
     ../liblbaworld/lbw3dwidget.cc \
     ../liblbaworld/lbw3dsphere.cc \
     ../liblbaworld/lbw3d.cc \
@@ -51,8 +61,17 @@ SOURCES += \
     ../liblbaworld/lbwmodelloader.cc \
     ../liblbaworld/lbwmap.cc \
     ../liblbaworld/lbwcharacter.cc \
+    ../liblbaworld/lbwcharacterloader.cc \
     ../liblbaworld/lbwactor.cc
 
 RESOURCES += ../liblbaworld/resources.qrc
 
-LIBS += -lsfml-audio -lSDL -lSDL_mixer
+LIBS += -lSDL -lSDL_mixer
+
+# The SFML backend is experimental and is not used by the applications.
+# Enable it explicitly with: qmake CONFIG+=lbaworld_sfml
+contains(CONFIG, lbaworld_sfml) {
+    HEADERS += ../liblbaworld/lbwsfmlaudio.h
+    SOURCES += ../liblbaworld/lbwsfmlaudio.cc
+    LIBS += -lsfml-audio
+}

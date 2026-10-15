@@ -291,14 +291,15 @@ const LbaBody::Spheres &LbaBody::spheres() const
 LbaBody::Bones LbaBody::childsOfBone(int parentId, int keyFrame) const
 {
     LbaBody::Bones childs;
+    const LbaAnimation::KeyFrame *animationFrame = mAnimation ? mAnimation->keyFrame(keyFrame) : NULL;
     for (int i=0; i<mBones.count(); i++) {
         if (mBones[i].parentId == parentId) {
             childs << mBones[i];
-            if (mAnimation) {
-                childs.last().boneType = mAnimation->bones(keyFrame)[i].boneType;
-                childs.last().rotateX  = mAnimation->bones(keyFrame)[i].rotateX;
-                childs.last().rotateY  = mAnimation->bones(keyFrame)[i].rotateY;
-                childs.last().rotateZ  = mAnimation->bones(keyFrame)[i].rotateZ;
+            if (animationFrame && i < animationFrame->bones.count()) {
+                childs.last().boneType = animationFrame->bones[i].boneType;
+                childs.last().rotateX  = animationFrame->bones[i].rotateX;
+                childs.last().rotateY  = animationFrame->bones[i].rotateY;
+                childs.last().rotateZ  = animationFrame->bones[i].rotateZ;
             }
         }
     }
@@ -867,4 +868,3 @@ void LbaBody::validate()
         }
     }
 }
-

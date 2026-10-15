@@ -2,13 +2,31 @@
 #include "layer2d/lbw2dposterlayer.h"
 #include "layer2d/lbw2dconsolelayer.h"
 
+#include <libqtr3d/qtr3dassets.h>
+#include <libqtr3d/physics/qtr3dfpsloop.h>
+
+namespace {
+
+const float LegacyFrameDurationMs = 66.0f;
+
+}
+
 //-------------------------------------------------------------------------------------------------
 LbwScreen::LbwScreen(LbwConsole *c, QWidget *parent)
-    : Lbw3dWidget(parent),
+    : Qtr3dWidget(parent),
       mStatusText("LBW Engine"),
-      mConsole(c)
+      mConsole(c),
+      mInitialized(false)
 {
     Q_ASSERT(c);
+
+    connect(this, &Qtr3dWidget::initialized, this, &LbwScreen::initWidget);
+    connect(&assets()->loop(), &Qtr3dFpsLoop::step, this,
+            [this](float simulationTimeMs, float, int) {
+        if (processState(simulationTimeMs/LegacyFrameDurationMs))
+            update();
+    });
+    assets()->loop().setFps(25);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -38,8 +56,13 @@ void LbwScreen::fadeTo(FlaMovie *movie)
 //-------------------------------------------------------------------------------------------------
 void LbwScreen::initWidget()
 {
+    if (mInitialized)
+        return;
+    mInitialized = true;
+
     // Setup Poster-Renderer
     m2dLayers << new Lbw2dPosterLayer();
+    m2dLayers.last()->setParent(this);
     bool done =
        connect(this, SIGNAL(requestFadeTo(QImage)), m2dLayers.last(), SLOT(showImage(QImage))) &&
        connect(this, SIGNAL(requestFadeTo(FlaMovie*)), m2dLayers.last(), SLOT(showFla(FlaMovie*)));
@@ -47,14 +70,16 @@ void LbwScreen::initWidget()
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
 
     m2dLayers << new Lbw2dConsoleLayer(mConsole);
+    m2dLayers.last()->setParent(this);
     done = connect(m2dLayers.last(), SIGNAL(updateRequest()), this, SLOT(update())); Q_ASSERT(done);
 
-    Lbw3dWidget::initWidget();
+    emit ready2run();
 }
 
 //-------------------------------------------------------------------------------------------------
-void LbwScreen::paint2dLayers()
+void LbwScreen::paint2D()
 {
+    Qtr3dWidget::paint2D();
     QPainter p(this);
 
     if (!mStatusText.isEmpty()) {
@@ -91,13 +116,13 @@ bool LbwScreen::event(QEvent *e)
             }
         }
     }
-    return Lbw3dWidget::event(e);
+    return Qtr3dWidget::event(e);
 }
 
 //-------------------------------------------------------------------------------------------------
 bool LbwScreen::processState(float speed)
 {
-    bool subResult = Lbw3dWidget::processState(speed);
+    bool subResult = false;
 
     for (int i=m2dLayers.count()-1; i >= 0; i--) {
         if (m2dLayers.at(i)->processState(speed)) {

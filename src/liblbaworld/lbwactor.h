@@ -6,16 +6,23 @@
 #include <libqtr3d/qtr3dmodel.h>
 #include <libqtr3d/qtr3dgeometrystate.h>
 #include <libqtr3d/physics/qtr3dstandardentity.h>
-
-class LbwCharacter;
+#include "lbwcharacter.h"
 
 class LbwActor : public Qtr3dStandardEntity
 {
 public:
     LbwActor(LbwCharacter *character);
 
-    void setCostume(const QString &costumeName, const QString &animation = "");
-    void setAnimation(const QString &animation);
+    bool setCostume(const QString &costumeName, const QString &animation = "");
+    bool setAnimation(const QString &animation);
+
+    void setRootMotionEnabled(bool enabled);
+    bool rootMotionEnabled() const;
+
+    QString currentCostume() const;
+    QString currentAnimation() const;
+
+    bool update(float dtSeconds) override;
 
     inline Qtr3dGeometryState *currentState() const { return mState; }
 
@@ -28,6 +35,10 @@ private:
 
     QString             mCurrentCostume;
     QString             mCurrentAnimation;
+    const LbwCharacter::AnimationClip *mCurrentClip;
+    float               mLastAnimationTime;
+    LbaAnimation::RootMotion mLastRootMotion;
+    bool                mRootMotionEnabled;
 };
 
 using LbwActors = QList<LbwActor*>;

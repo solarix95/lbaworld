@@ -7,8 +7,14 @@ class TestLiblbadata: public QObject
 private slots:
     void testBinWriter();
     void testBinReader();
+    void testBinReaderErrors();
 
     void testHqrFile();
+    void testHqrLazyFileAccess();
+    void testHqrValidation();
+    void testLbaRess();
+    void testLbaAnimation();
+    void testLbaCharacter();
 
     void testLbaPalette();
 };

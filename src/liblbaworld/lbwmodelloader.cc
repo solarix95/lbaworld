@@ -40,7 +40,8 @@ inline void initVertex(Qtr3dColoredVertex &v, int vi, const LbaBody::Vertices &p
 namespace LbwModelLoader {
 
 //--------------------------------------------------------------------------------------------------
-void loadBody(Qtr3dModel &model, LbaBody &body, const LbaPalette &pal, LbaAnimation *animation)
+void loadBody(Qtr3dModel &model, LbaBody &body, const LbaPalette &pal,
+              LbaAnimation *animation, const QString &animationName)
 {
     // body.translateVertices();
     loadBodySkin(model,body); // LBA1 Skin + Qtr3d-Nodes
@@ -48,7 +49,7 @@ void loadBody(Qtr3dModel &model, LbaBody &body, const LbaPalette &pal, LbaAnimat
     loadBodySpheres(model,body, pal);
     // loadBodyLines(*model,body, pal);
 
-    loadBodyAnimation(model,body,animation);
+    loadBodyAnimation(model,body,animation,animationName);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ void loadBodySpheres(Qtr3dModel &model, const LbaBody &body, const LbaPalette &p
         QVector3D boneStartPos(0,0,0);
         boneStartPos = boneTranslation * boneStartPos;
 
-        QVector3D boneToCenterDistance = (sphereCenter.toVector() - boneStartPos)/800.0;
+        QVector3D boneToCenterDistance = (sphereCenter.toVector() - boneStartPos)/800.0f;
 
 
         const auto *sphereNode = model.nodes().nodeByName(QString::number(sphereBoneId));
@@ -238,19 +239,41 @@ void loadSkinBones(Qtr3dMesh *skinMesh, const LbaBody &body)
     }
 }
 
-void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body, LbaAnimation *animation)
+void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body,
+                       LbaAnimation *animation, const QString &animationName)
 {
     if (model.meshes().count() <= 0)
         return;
 
-    if (!animation)
+    if (!animation || !animation->isValid())
         return;
 
-    if (animation->keyFrameCount() <= 0 || animation->bones(0).count() <= 0)
+    const auto &bodyBones = body.bones();
+    const int animatedBoneCount = qMin(bodyBones.count(), animation->boneCount());
+    if (animatedBoneCount <= 0)
+        return;
+    if (bodyBones.count() != animation->boneCount())
+        qWarning() << "Animation loading: different bone counts:"
+                   << bodyBones.count() << "/" << animation->boneCount();
+
+    const LbaAnimation::Timeline timeline = animation->playbackTimeline();
+    if (timeline.count() < 2)
         return;
 
-    // Create skeletal for the primary LBA-Mesh ("Skin")
-    Qtr3dModelAnimation *anim = new Qtr3dModelAnimation("demo",3000,1000);
+    // The original loop is a transition from the last pose to loopStart. The
+    // LBA timeline appends one full loop cycle so the generic animator can
+    // subsequently repeat only that suffix.
+    const int loopStartIndex = qBound(0, animation->loopStartIndex(), animation->keyFrameCount()-1);
+    if (loopStartIndex != animation->loopStartIndex())
+        qWarning() << "Animation loading: invalid loop start"
+                   << animation->loopStartIndex() << "for"
+                   << animation->keyFrameCount() << "frames; using" << loopStartIndex;
+    // LBA's game clock advances at 50 ticks per second.
+    Qtr3dModelAnimation *anim = new Qtr3dModelAnimation(
+                animationName,
+                animation->playbackDurationTicks(),
+                50);
+    anim->setLoopStart(animation->playbackLoopStartTicks());
 
     /*
         LBA  has synchronous keyframes:
@@ -262,40 +285,63 @@ void loadBodyAnimation(Qtr3dModel &model, const LbaBody &body, LbaAnimation *ani
         ... so we have to "invert" the datastructure here
     */
 
-    for (int i=0; i<animation->bones(0).count(); i++) {
+    // Animation element 0 is special in LBA: its Y component controls actor
+    // yaw, while the keyframe header contains actor displacement. Twin-E does
+    // not interpolate it as a skeleton node.
+    for (int i=1; i<animatedBoneCount; i++) {
 
         Qtr3dModelAnimation::Channel ch;
         ch.nodeName = QString::number(i);
 
-        // first loop: create rotation keys:
-        for (int k=0; k<animation->keyFrameCount(); k++) {
-            float t = k * 3000/animation->keyFrameCount();
-            const auto &lbaBone = animation->bones(k).at(i);
-            if (lbaBone.boneType == 0) { // Rotation
+        for (int timelineIndex = 1; timelineIndex < timeline.count(); ++timelineIndex) {
+            const LbaAnimation::TimedFrame &previousTime = timeline[timelineIndex-1];
+            const LbaAnimation::TimedFrame &targetTime = timeline[timelineIndex];
+            const LbaAnimation::SimpleBone &previousBone =
+                    animation->bones(previousTime.frameIndex).at(i);
+            const LbaAnimation::SimpleBone &targetBone =
+                    animation->bones(targetTime.frameIndex).at(i);
 
-                Qtr3dModelAnimation::RotationKey rotation(t, QQuaternion::fromEulerAngles(
-                                                              lbaBone.rotateX,
-                                                              lbaBone.rotateY,
-                                                              lbaBone.rotateZ));
-                ch.mRotationKeys << rotation;
+            if (targetBone.boneType == 0) { // Rotation
+                const QVector3D previousAngles(360.0f*previousBone.rawX/1024.0f,
+                                               360.0f*previousBone.rawY/1024.0f,
+                                               360.0f*previousBone.rawZ/1024.0f);
+                const QVector3D targetAngles(360.0f*targetBone.rawX/1024.0f,
+                                             360.0f*targetBone.rawY/1024.0f,
+                                             360.0f*targetBone.rawZ/1024.0f);
+
+                // Add both transform components. Duplicate boundary keys make
+                // a mode switch instantaneous, while quaternion interpolation
+                // takes the shortest rotational path within the segment.
+                ch.mPositionKeys << Qtr3dModelAnimation::PositionKey(previousTime.time, QVector3D());
+                ch.mPositionKeys << Qtr3dModelAnimation::PositionKey(targetTime.time, QVector3D());
+                ch.mRotationKeys << Qtr3dModelAnimation::RotationKey(
+                                        previousTime.time,
+                                        QQuaternion::fromEulerAngles(previousAngles));
+                ch.mRotationKeys << Qtr3dModelAnimation::RotationKey(
+                                        targetTime.time,
+                                        QQuaternion::fromEulerAngles(targetAngles));
+            } else if (targetBone.boneType == 1 || targetBone.boneType == 2) { // Translation
+                const QVector3D previousPosition(previousBone.rawX/800.0f,
+                                                 previousBone.rawY/800.0f,
+                                                 previousBone.rawZ/800.0f);
+                const QVector3D targetPosition(targetBone.rawX/800.0f,
+                                               targetBone.rawY/800.0f,
+                                               targetBone.rawZ/800.0f);
+                ch.mRotationKeys << Qtr3dModelAnimation::RotationKey(previousTime.time, QQuaternion());
+                ch.mRotationKeys << Qtr3dModelAnimation::RotationKey(targetTime.time, QQuaternion());
+                ch.mPositionKeys << Qtr3dModelAnimation::PositionKey(previousTime.time, previousPosition);
+                ch.mPositionKeys << Qtr3dModelAnimation::PositionKey(targetTime.time, targetPosition);
             } else {
-                Q_ASSERT(lbaBone.boneType == 1);
-                Qtr3dModelAnimation::PositionKey position(t, QVector3D(lbaBone.rotateX/800.0,lbaBone.rotateY/800.0,lbaBone.rotateZ/800.0));
-                ch.mPositionKeys << position;
+                qWarning() << "Animation loading: unsupported bone mode"
+                           << targetBone.boneType << "in bone" << i
+                           << "frame" << targetTime.frameIndex;
             }
         }
 
         anim->addChannel(ch);
     }
     model.addAnimation(anim);
-
-    const auto &bones    = body.bones();
-    if (bones.count() != animation->bones(0).count()) {
-        qWarning() << "Animation loading: invalid bone count: " << bones.count() << "/" << animation->bones(0).count();
-        return;
-    }
 }
 
 
 }
-

@@ -7,7 +7,8 @@ TARGET = hqrpak
 INCLUDEPATH += .
 QMAKE_CXXFLAGS += -std=c++11
 CONFIG += debug
-DESTDIR = ../../bin
+
+include(../lbaworld-build.pri)
 
 include(../liblbadata/liblbadata.pro)
 

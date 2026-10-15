@@ -7,6 +7,8 @@
 
 class LbaBody;
 class LbaAnimation;
+class LbwActor;
+class LbwCharacter;
 
 class LbaModelViewer : public QWidget
 {
@@ -20,6 +22,9 @@ private slots:
 
 private:
     void setupViewerByUI();
+    void clearCharacter();
+    bool loadCharacter(int entityIndex, int logicalBodyIndex = 0);
+    void startAnimationDemo();
 
 private:
 
@@ -28,6 +33,8 @@ private:
     const LbaRess &mRess;
     Qtr3dModel         *mModel;
     Qtr3dGeometryState *mState;
+    LbwCharacter       *mCharacter;
+    LbwActor           *mActor;
 };
 
 #endif // LBAMODELVIEWER_H
